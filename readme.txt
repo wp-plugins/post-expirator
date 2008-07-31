@@ -10,7 +10,7 @@ Allows you to add an expiration date (hourly) to posts which you can configure t
 == Description ==
 
 The Expiration Date plugin allows the user to set expiration dates for both posts and pages.  There is a configuration option page in the plugins 
-area that will allow you to seperataly control whether or not posts/pages are wither deleted or changed to draft status.
+area that will allow you to seperataly control whether or not posts/pages are either deleted or changed to draft status.
 
 The plugin hooks into the wp cron processes and runs every hour.
 
