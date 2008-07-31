@@ -14,12 +14,12 @@ area that will allow you to seperataly control whether or not posts/pages are wi
 
 The plugin hooks into the wp cron processes and runs every hour.
 
-=== Wordpress MU ===
+== Wordpress MU ==
 
 This plugin is compataibile with Wordpress MU 1.5+, however currently it will not work in the mu-plugins folder due to the plugin activation 
 functions.
 
-=== Credits ===
+== Credits ==
 
 Plugin concept is based on the orginial [Expiration Date](http://www.hostscope.com/wordpress-plugins/the-expirationdate-wordpress-plugin/) plugin by jrrl. 
 
