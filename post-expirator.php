@@ -119,7 +119,7 @@ function expirationdate_meta_box($post) {
 
 	$rv = array();
 	$rv[] = '<p><input type="checkbox" name="enable-expirationdate" id="enable-expirationdate" value="checked"'.$enabled.' onclick="expirationdate_ajax_add_meta(\'enable-expirationdate\')" />';
-	$rv[] = '<label for="enable-expirationdate">Enable Post Expiration</labael></p>';
+	$rv[] = '<label for="enable-expirationdate">Enable Post Expiration</label></p>';
 	$rv[] = '<table><tr>';
 	   $rv[] = '<th style="text-align: left;">Month</th>';
 	   $rv[] = '<th style="text-align: left;">Day</th>';
