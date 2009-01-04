@@ -2,7 +2,7 @@
 Contributors: axelseaa
 Tags: expire, posts, pages
 Requires at least: 2.5
-Tested up to: 2.6
+Tested up to: 2.7
 Stable tag: trunk
 
 Allows you to add an expiration date (hourly) to posts which you can configure to either delete the post or change it to a draft.
