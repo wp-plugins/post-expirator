@@ -35,11 +35,15 @@ This section describes how to install the plugin and get it working.
 
 == Changelog ==
 
+**Version 1.2.1**
+
+* Fixed issue with display date format not being recognized after upgrade
+
 **Version 1.2**
 
 * Changed wording from "Expiration Date" to "Post Expirator" and moved the configuration options to the "Settings" tab.
 * Added shortcode tag [postexpirator] to display the post expiration date within the post
-* Added new setting for the default date display format
+** Added new setting for the default format
 * Fixed bug where expiration date was removed when a post was auto saved
 
 **Version 1.1**

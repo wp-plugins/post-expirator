@@ -4,7 +4,7 @@ Plugin Name: Post Expirator
 Plugin URI: http://wordpress.org/extend/plugins/post-expirator/
 Description: Allows you to add an expiration date (hourly) to posts which you can configure to either delete the post or change it to a draft.
 Author: Aaron Axelsen
-Version: 1.2
+Version: 1.2.1
 Author URI: http://www.frozenpc.net
 */
 
@@ -346,7 +346,7 @@ function expirationdate_show_options() {
 
 // [postexpirator format="l F jS, Y g:ia" tz="foo"]
 function postexpirator_shortcode($atts) {
-	global $post;
+	global $post,$expirationdateDefaultDateFormat;
         $expirationdatets = get_post_meta($post->ID,'expiration-date',true);
 	if (empty($expirationdatets))
 		return false;
