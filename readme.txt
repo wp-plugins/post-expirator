@@ -17,12 +17,12 @@ The plugin hooks into the wp cron processes and runs every hour.
 The expiration date can be displayed within the actual post by using the [postexpirator] tag.  The format attribute will override the plugin 
 default display format.  See the [PHP Date Function](http://us2.php.net/manual/en/function.date.php) for valid format options. 
 
-=== Wordpress MU ===
+== Wordpress MU ==
 
 This plugin is compataibile with Wordpress MU 1.5+, however currently it will not work in the mu-plugins folder due to the plugin activation 
 functions.
 
-=== Credits ===
+== Credits ==
 
 Plugin is based on the orginial [Expiration Date](http://www.hostscope.com/wordpress-plugins/the-expirationdate-wordpress-plugin/) plugin by jrrl. 
 
