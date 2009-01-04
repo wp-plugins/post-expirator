@@ -4,17 +4,19 @@ Plugin Name: Post Expirator
 Plugin URI: http://wordpress.org/extend/plugins/post-expirator/
 Description: Allows you to add an expiration date (hourly) to posts which you can configure to either delete the post or change it to a draft.
 Author: Aaron Axelsen
-Version: 1.1
+Version: 1.2
 Author URI: http://www.frozenpc.net
 */
 
+// Default Values
+$expirationdateDefaultDateFormat = 'l F jS, Y g:ia';
 
 /** 
  * Function that does the actualy deleting - called by wp_cron
  */
 function expirationdate_delete_expired_posts() {
 	global $wpdb;
-	$result = $wpdb->get_results('select post_id, meta_value from ' . $wpdb->postmeta . ' where meta_key = "expiration-date" AND meta_value < "' . mktime() . '"');
+	$result = $wpdb->get_results('select post_id, meta_value from ' . $wpdb->postmeta . ' where meta_key = "expiration-date" AND meta_value <= "' . mktime() . '"');
   	foreach ($result as $a) {
 		$post_result = $wpdb->get_var('select post_type from ' . $wpdb->posts .' where ID = '. $a->post_id);
 		if ($post_result == 'post') {
@@ -40,9 +42,10 @@ add_action ('expirationdate_delete_'.$current_blog->blog_id, 'expirationdate_del
  * Called at plugin activation
  */
 function expirationdate_activate () {
-	global $current_blog;
+	global $current_blog,$expirationdateDefaultDateFormat;
 	update_option('expirationdateExpiredPostStatus','Draft');
 	update_option('expirationdateExpiredPageStatus','Draft');
+	update_option('expirationdateDefaultDateFormat',$expirationdateDefaultDateFormat);
 	wp_schedule_event(mktime(date('H'),0,0,date('m'),date('d'),date('Y')), 'hourly', 'expirationdate_delete_'.$current_blog->blog_id);
 }
 register_activation_hook (__FILE__, 'expirationdate_activate');
@@ -54,6 +57,7 @@ function expirationdate_deactivate () {
 	global $current_blog;
 	delete_option('expirationdateExpiredPostStatus');
 	delete_option('expirationdateExpiredPageStatus');
+	delete_option('expirationdateDefaultDateFormat');
 	wp_clear_scheduled_hook('expirationdate_delete_'.$current_blog->blog_id);
 }
 register_deactivation_hook (__FILE__, 'expirationdate_deactivate');
@@ -87,7 +91,7 @@ add_action ('manage_pages_custom_column', 'expirationdate_show_value');
  * Add's hooks to get the meta box added to post
  */
 function expirationdate_meta_post() {
-	add_meta_box('expirationdatediv', __('Expiration Date'), 'expirationdate_meta_box', 'post', 'advanced', 'high');
+	add_meta_box('expirationdatediv', __('Post Expirator'), 'expirationdate_meta_box', 'post', 'advanced', 'high');
 }
 add_action ('dbx_post_advanced','expirationdate_meta_post');
 
@@ -95,7 +99,7 @@ add_action ('dbx_post_advanced','expirationdate_meta_post');
  * Add's hooks to get the meta box added to page
  */
 function expirationdate_meta_page() {
-	add_meta_box('expirationdatediv', __('Expiration Date'), 'expirationdate_meta_box', 'page', 'advanced', 'high');
+	add_meta_box('expirationdatediv', __('Post Expirator'), 'expirationdate_meta_box', 'page', 'advanced', 'high');
 }
 add_action ('edit_page_form','expirationdate_meta_page');
 
@@ -236,6 +240,9 @@ function expirationdate_get_blog_url() {
  * Called when post is saved - stores expiration-date meta value
  */
 function expirationdate_update_post_meta($id) {
+        if ( 'autosave' == $_POST['action'] )
+		return;
+
         $month = $_POST['expirationdate_month'];
         $day = $_POST['expirationdate_day'];
         $year = $_POST['expirationdate_year'];
@@ -257,7 +264,7 @@ add_action('save_post','expirationdate_update_post_meta');
  * Hook's to add plugin page menu
  */
 function expirationdate_plugin_menu() {
-	add_submenu_page('plugins.php','Expiration Date Options','Expiration Date',9,basename(__FILE__),'expirationdate_show_options');
+	add_submenu_page('options-general.php','Post Expirator Options','Post Expirator',9,basename(__FILE__),'expirationdate_show_options');
 }
 add_action('admin_menu', 'expirationdate_plugin_menu');
 
@@ -269,6 +276,7 @@ function expirationdate_show_options() {
 	if ($_POST['expirationdateSave']) {
 		update_option('expirationdateExpiredPostStatus',$_POST['expired-post-status']);
 		update_option('expirationdateExpiredPageStatus',$_POST['expired-page-status']);
+		update_option('expirationdateDefaultDateFormat',$_POST['expired-default-date-format']);
                 echo "<div id='message' class='updated fade'><p>Saved Options!</p></div>";
 	}
 
@@ -281,17 +289,23 @@ function expirationdate_show_options() {
 	if (empty($expirationdateExpiredPageStatus))
 		$expirationdateExpiredPageStatus = 'Draft';
 
+	$expirationdateDefaultDateFormat = get_option('expirationdateDefaultDateFormat');
+	if (empty($expirationdateDefaultDateFormat)) {
+		global $expirationdateDefaultDateFormat;
+		$expirationdateDefaultDateFormat = $expirationdateDefaultDateFormat;
+	}
+
 	?>
 <div class="wrap">
-	<h2><?php _e('Expiration Date Options'); ?></h2>
+	<h2><?php _e('Post Expirator Options'); ?></h2>
 	<p>
-	The expiration date plugin sets a custom meta value, and then optionally allows you to select if you want the post
+	The post expirator plugin sets a custom meta value, and then optionally allows you to select if you want the post
 	changed to a draft status or deleted when it expires.
 	</p>
 	<form method="post" id="expirationdate_save_options">
 		<table class="form-table">
 			<tr valign-"top">
-				<th scope="row"><label for="expired-post-status">Set Post To -></label></th>
+				<th scope="row"><label for="expired-post-status">Set Post To:</label></th>
 				<td>
 					<select name="expired-post-status" id="expired-post-status">
 					<option<?php if ($expirationdateExpiredPostStatus == 'Draft'){ echo ' selected="selected"';}?>>Draft</option>
@@ -302,7 +316,7 @@ function expirationdate_show_options() {
 				</td>
 			</tr>
 			<tr valign-"top">
-				<th scope="row"><label for="expired-page-status">Set Page To -></label></th>
+				<th scope="row"><label for="expired-page-status">Set Page To:</label></th>
 				<td>
 					<select name="expired-page-status" id="expired-page-status">
 					<option<?php if ($expirationdateExpiredPageStatus == 'Draft'){ echo ' selected="selected"';}?>>Draft</option>
@@ -310,6 +324,15 @@ function expirationdate_show_options() {
 					</select>	
 					<br/>
 					Select whether the page should be deleted or changed to a draft at expiration time.
+				</td>
+			</tr>
+			<tr valign-"top">
+				<th scope="row"><label for="expired-default-date-format">Default Date Format:</label></th>
+				<td>
+					<input type="text" name="expired-default-date-format" id="expired-default-date-format" value="<?php echo $expirationdateDefaultDateFormat ?>" size="25" /> (<?php echo date("$expirationdateDefaultDateFormat") ?>)
+					<br/>
+					The default format to use when displaying the expiration date within a post using the [postexpirator] 
+					shortcode.  For information on valid formatting options, see: <a href="http://us2.php.net/manual/en/function.date.php" target="_blank">PHP Date Function</a>.
 				</td>
 			</tr>
 		</table>
@@ -321,4 +344,21 @@ function expirationdate_show_options() {
 	<?php
 }
 
-?>
+// [postexpirator format="l F jS, Y g:ia" tz="foo"]
+function postexpirator_shortcode($atts) {
+	global $post;
+        $expirationdatets = get_post_meta($post->ID,'expiration-date',true);
+	if (empty($expirationdatets))
+		return false;
+	extract(shortcode_atts(array(
+		'format' => get_option('expirationdateDefaultDateFormat'),
+		'tz' => date('T'),
+	), $atts));
+
+	$postexpirator_date_display = get_option('expirationdateDefaultDateFormat');
+	if (empty($format))
+		$format = $expirationdateDefaultDateFormat;		
+
+	return date("$format",$expirationdatets);
+}
+add_shortcode('postexpirator', 'postexpirator_shortcode');
