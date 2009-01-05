@@ -4,12 +4,15 @@ Plugin Name: Post Expirator
 Plugin URI: http://wordpress.org/extend/plugins/post-expirator/
 Description: Allows you to add an expiration date (hourly) to posts which you can configure to either delete the post or change it to a draft.
 Author: Aaron Axelsen
-Version: 1.2.1
+Version: 1.3
 Author URI: http://www.frozenpc.net
 */
 
 // Default Values
-$expirationdateDefaultDateFormat = 'l F jS, Y g:ia';
+$expirationdateDefaultDateFormat = 'l F jS, Y';
+$expirationdateDefaultTimeFormat = 'g:ia';
+$expirationdateDefaultFooterContents = 'Post expires at EXPIRATIONTIME on EXPIRATIONDATE';
+$expirationdateDefaultFooterStyle = 'font-style: italic;';
 
 /** 
  * Function that does the actualy deleting - called by wp_cron
@@ -42,10 +45,15 @@ add_action ('expirationdate_delete_'.$current_blog->blog_id, 'expirationdate_del
  * Called at plugin activation
  */
 function expirationdate_activate () {
-	global $current_blog,$expirationdateDefaultDateFormat;
+	global $current_blog,$expirationdateDefaultDateFormat,$expirationdateDefaultTimeFormat,$expirationdateDefaultFooterContents,$expirationdateDefaultFooterStyle;
 	update_option('expirationdateExpiredPostStatus','Draft');
 	update_option('expirationdateExpiredPageStatus','Draft');
 	update_option('expirationdateDefaultDateFormat',$expirationdateDefaultDateFormat);
+	update_option('expirationdateDefaultTimeFormat',$expirationdateDefaultTimeFormat);
+	update_option('expirationdateFooterContents',$expirationdateDefaultFooterContents);
+	update_option('expirationdateFooterStyle',$expirationdateDefaultFooterStyle);
+        update_option('expirationdateDisplayFooter',0);
+
 	wp_schedule_event(mktime(date('H'),0,0,date('m'),date('d'),date('Y')), 'hourly', 'expirationdate_delete_'.$current_blog->blog_id);
 }
 register_activation_hook (__FILE__, 'expirationdate_activate');
@@ -58,6 +66,10 @@ function expirationdate_deactivate () {
 	delete_option('expirationdateExpiredPostStatus');
 	delete_option('expirationdateExpiredPageStatus');
 	delete_option('expirationdateDefaultDateFormat');
+	delete_option('expirationdateDefaultTimeFormat');
+        delete_option('expirationdateDisplayFooter');
+        delete_option('expirationdateFooterContents');
+        delete_option('expirationdateFooterStyle');
 	wp_clear_scheduled_hook('expirationdate_delete_'.$current_blog->blog_id);
 }
 register_deactivation_hook (__FILE__, 'expirationdate_deactivate');
@@ -162,6 +174,7 @@ function expirationdate_meta_box($post) {
 	$rv[] = '</select>';
 	$rv[] = '</td><td>@</td><td>';
 	$rv[] = '<input type="text" id="expirationdate_hour" name="expirationdate_hour" value="'.$defaulthour.'" size="2"'.$disabled.'" />';
+	$rv[] = '<input type="hidden" name="expirationdate_formcheck" value="true" />';
 	$rv[] = '</td></tr></table>';
 
 	$rv[] = '<div id="expirationdate_ajax_result"></div>';
@@ -240,8 +253,8 @@ function expirationdate_get_blog_url() {
  * Called when post is saved - stores expiration-date meta value
  */
 function expirationdate_update_post_meta($id) {
-        if ( 'autosave' == $_POST['action'] )
-		return;
+	if (!isset($_POST['expirationdate_formcheck']))
+		return false;
 
         $month = $_POST['expirationdate_month'];
         $day = $_POST['expirationdate_day'];
@@ -277,6 +290,10 @@ function expirationdate_show_options() {
 		update_option('expirationdateExpiredPostStatus',$_POST['expired-post-status']);
 		update_option('expirationdateExpiredPageStatus',$_POST['expired-page-status']);
 		update_option('expirationdateDefaultDateFormat',$_POST['expired-default-date-format']);
+		update_option('expirationdateDefaultTimeFormat',$_POST['expired-default-time-format']);
+		update_option('expirationdateDisplayFooter',$_POST['expired-display-footer']);
+		update_option('expirationdateFooterContents',$_POST['expired-footer-contents']);
+		update_option('expirationdateFooterStyle',$_POST['expired-footer-style']);
                 echo "<div id='message' class='updated fade'><p>Saved Options!</p></div>";
 	}
 
@@ -295,6 +312,35 @@ function expirationdate_show_options() {
 		$expirationdateDefaultDateFormat = $expirationdateDefaultDateFormat;
 	}
 
+	$expirationdateDefaultTimeFormat = get_option('expirationdateDefaultTimeFormat');
+	if (empty($expirationdateDefaultTimeFormat)) {
+		global $expirationdateDefaultTimeFormat;
+		$expirationdateDefaultTimeFormat = $expirationdateDefaultTimeFormat;
+	}
+
+	$expireddisplayfooter = get_option('expirationdateDisplayFooter');
+	if (empty($expireddisplayfooter))
+		$expireddisplayfooter = 0;
+
+	$expireddisplayfooterenabled = '';
+	$expireddisplayfooterdisabled = '';
+	if ($expireddisplayfooter == 0)
+		$expireddisplayfooterdisabled = 'checked="checked"';
+	else if ($expireddisplayfooter == 1)
+		$expireddisplayfooterenabled = 'checked="checked"';
+	
+	$expirationdateFooterContents = get_option('expirationdateFooterContents');
+	if (empty($expirationdateFooterContents)) {
+		global $expirationdateDefaultFooterContents;
+		$expirationdateFooterContents = $expirationdateDefaultFooterContents;
+	}
+
+	$expirationdateFooterStyle = get_option('expirationdateFooterStyle');
+	if (empty($expirationdateFooterStyle)) {
+		global $expirationdateDefaultFooterStyle;
+		$expirationdateFooterStyle = $expirationdateDefaultFooterStyle;
+	}
+
 	?>
 <div class="wrap">
 	<h2><?php _e('Post Expirator Options'); ?></h2>
@@ -302,7 +348,15 @@ function expirationdate_show_options() {
 	The post expirator plugin sets a custom meta value, and then optionally allows you to select if you want the post
 	changed to a draft status or deleted when it expires.
 	</p>
+	<p>Valid [postexpiration] attributes:
+	<ul>
+		<li>type - defaults to full - valid options are full,date,time</li>
+		<li>dateformat - format set here will override the value set on the settings page</li>
+		<li>timeformat - format set here will override the value set on the settings page</li>
+	</ul>
+	</p>
 	<form method="post" id="expirationdate_save_options">
+		<h3>Defaults</h3>
 		<table class="form-table">
 			<tr valign-"top">
 				<th scope="row"><label for="expired-post-status">Set Post To:</label></th>
@@ -327,12 +381,57 @@ function expirationdate_show_options() {
 				</td>
 			</tr>
 			<tr valign-"top">
-				<th scope="row"><label for="expired-default-date-format">Default Date Format:</label></th>
+				<th scope="row"><label for="expired-default-date-format">Date Format:</label></th>
 				<td>
 					<input type="text" name="expired-default-date-format" id="expired-default-date-format" value="<?php echo $expirationdateDefaultDateFormat ?>" size="25" /> (<?php echo date("$expirationdateDefaultDateFormat") ?>)
 					<br/>
 					The default format to use when displaying the expiration date within a post using the [postexpirator] 
-					shortcode.  For information on valid formatting options, see: <a href="http://us2.php.net/manual/en/function.date.php" target="_blank">PHP Date Function</a>.
+					shortcode or within the footer.  For information on valid formatting options, see: <a href="http://us2.php.net/manual/en/function.date.php" target="_blank">PHP Date Function</a>.
+				</td>
+			</tr>
+			<tr valign-"top">
+				<th scope="row"><label for="expired-default-time-format">Time Format:</label></th>
+				<td>
+					<input type="text" name="expired-default-time-format" id="expired-default-time-format" value="<?php echo $expirationdateDefaultTimeFormat ?>" size="25" /> (<?php echo date("$expirationdateDefaultTimeFormat") ?>)
+					<br/>
+					The default format to use when displaying the expiration time within a post using the [postexpirator] 
+					shortcode or within the footer.  For information on valid formatting options, see: <a href="http://us2.php.net/manual/en/function.date.php" target="_blank">PHP Date Function</a>.
+				</td>
+			</tr>
+		</table>
+		<h3>Post Footer Display</h3>
+		<p>Enabling this below will display the expiration date automatically at the end of any post which is set to expire.</p>
+		<table class="form-table">
+			<tr valign-"top">
+				<th scope="row">Show in post footer?</th>
+				<td>
+					<input type="radio" name="expired-display-footer" id="expired-display-footer-true" value="1" <?php echo $expireddisplayfooterenabled ?>/> <label for="expired-display-footer-true">Enabled</label> 
+					<input type="radio" name="expired-display-footer" id="expired-display-footer-false" value="0" <?php echo $expireddisplayfooterdisabled ?>/> <label for="expired-display-footer-false">Disabled</label>
+					<br/>
+					This will enable or disable displaying the post expiration date in the post footer.
+				</td>
+			</tr>
+			<tr valign-"top">
+				<th scope="row"><label for="expired-footer-contents">Footer Contents:</label></th>
+				<td>
+					<textarea id="expired-footer-contents" name="expired-footer-contents" rows="3" cols="50"><?php echo $expirationdateFooterContents; ?></textarea>
+					<br/>
+					Enter the text you would like to appear at the bottom of every post that will expire.  The following placeholders will be replaced
+					with the post expiration date in the following format:
+					<ul>
+						<li>EXPIRATIONFULL -> <?php echo date("$expirationdateDefaultDateFormat $expirationdateDefaultTimeFormat") ?></li>
+						<li>EXPIRATIONDATE -> <?php echo date("$expirationdateDefaultDateFormat") ?></li>
+						<li>EXPIRATIONTIME -> <?php echo date("$expirationdateDefaultTimeFormat") ?></li>
+					</ul>
+				</td>
+			</tr>
+			<tr valign-"top">
+				<th scope="row"><label for="expired-footer-style">Footer Style:</label></th>
+				<td>
+					<input type="text" name="expired-footer-style" id="expired-footer-style" value="<?php echo $expirationdateFooterStyle ?>" size="25" />
+					(<span style="<?php echo $expirationdateFooterStyle ?>">This post will expire on <?php echo date("$expirationdateDefaultDateFormat $expirationdateDefaultTimeFormat"); ?></span>)
+					<br/>
+					The inline css which will be used to style the footer text.
 				</td>
 			</tr>
 		</table>
@@ -346,19 +445,88 @@ function expirationdate_show_options() {
 
 // [postexpirator format="l F jS, Y g:ia" tz="foo"]
 function postexpirator_shortcode($atts) {
-	global $post,$expirationdateDefaultDateFormat;
+	global $post;
+
         $expirationdatets = get_post_meta($post->ID,'expiration-date',true);
 	if (empty($expirationdatets))
 		return false;
+
 	extract(shortcode_atts(array(
-		'format' => get_option('expirationdateDefaultDateFormat'),
-		'tz' => date('T'),
+		'dateformat' => get_option('expirationdateDefaultDateFormat'),
+		'timeformat' => get_option('expirationdateDefaultTimeFormat'),
+		'type' => full,
+		'tz' => date('T')
 	), $atts));
 
-	$postexpirator_date_display = get_option('expirationdateDefaultDateFormat');
-	if (empty($format))
-		$format = $expirationdateDefaultDateFormat;		
+	if (empty($dateformat)) {
+		global $expirationdateDefaultDateFormat;
+		$dateformat = $expirationdateDefaultDateFormat;		
+	}
+
+	if (empty($timeformat)) {
+		global $expirationdateDefaultTimeFormat;
+		$timeformat = $expirationdateDefaultTimeFormat;		
+	}
+
+	if ($type == 'full') 
+		$format = $dateformat.' '.$timeformat;
+	else if ($type == 'date')
+		$format = $dateformat;
+	else if ($type == 'time')
+		$format = $timeformat;
 
 	return date("$format",$expirationdatets);
 }
 add_shortcode('postexpirator', 'postexpirator_shortcode');
+
+function postexpirator_add_footer($text) {
+	global $post;
+
+	// Check to see if its enabled
+	$displayFooter = get_option('expirationdateDisplayFooter');
+	if ($displayFooter === false || $displayFooter == 0)
+		return $text;
+
+        $expirationdatets = get_post_meta($post->ID,'expiration-date',true);
+	if (!is_numeric($expirationdatets))
+		return $text;
+
+        $dateformat = get_option('expirationdateDefaultDateFormat');
+	if (empty($dateformat)) {
+		global $expirationdateDefaultDateFormat;
+		$dateformat = $expirationdateDefaultDateFormat;		
+	}
+
+        $timeformat = get_option('expirationdateDefaultTimeFormat');
+	if (empty($timeformat)) {
+		global $expirationdateDefaultTimeFormat;
+		$timeformat = $expirationdateDefaultTimeFormat;		
+	}
+
+        $expirationdateFooterContents = get_option('expirationdateFooterContents');
+        if (empty($expirationdateFooterContents)) {
+                global $expirationdateDefaultFooterContents;
+                $expirationdateFooterContents = $expirationdateDefaultFooterContents;
+        }
+	
+        $expirationdateFooterStyle = get_option('expirationdateFooterStyle');
+        if (empty($expirationdateFooterStyle)) {
+                global $expirationdateDefaultFooterStyle;
+                $expirationdateFooterStyle = $expirationdateDefaultFooterStyle;
+        }
+	
+	$search = array(
+		'EXPIRATIONFULL',
+		'EXPIRATIONDATE',
+		'EXPIRATIONTIME'
+	);
+	$replace = array(
+		date("$dateformat $timeformat",$expirationdatets),
+		date("$dateformat",$expirationdatets),
+		date("$timeformat",$expirationdatets)
+	);
+
+	$add_to_footer = '<p style="'.$expirationdateFooterStyle.'">'.str_replace($search,$replace,$expirationdateFooterContents).'</p>';
+	return $text.$add_to_footer;
+}
+add_action('the_content','postexpirator_add_footer',0);
