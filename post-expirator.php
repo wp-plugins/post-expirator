@@ -4,7 +4,7 @@ Plugin Name: Post Expirator
 Plugin URI: http://wordpress.org/extend/plugins/post-expirator/
 Description: Allows you to add an expiration date (hourly) to posts which you can configure to either delete the post or change it to a draft.
 Author: Aaron Axelsen
-Version: 1.3
+Version: 1.3.1
 Author URI: http://www.frozenpc.net
 */
 
@@ -14,13 +14,24 @@ $expirationdateDefaultTimeFormat = 'g:ia';
 $expirationdateDefaultFooterContents = 'Post expires at EXPIRATIONTIME on EXPIRATIONDATE';
 $expirationdateDefaultFooterStyle = 'font-style: italic;';
 
+# Save for future use
+#function blah_blah_blah($array) {
+#       $array['minute'] = array(
+#               'interval' => 60,
+#               'display' => __('Once a Minute')
+#       );
+#	return $array;
+#}
+#add_filter('cron_schedules','blah_blah_blah');
+#print_r(wp_get_schedules());
+
 /** 
  * Function that does the actualy deleting - called by wp_cron
  */
 function expirationdate_delete_expired_posts() {
 	global $wpdb;
-	$result = $wpdb->get_results('select post_id, meta_value from ' . $wpdb->postmeta . ' where meta_key = "expiration-date" AND meta_value <= "' . mktime() . '"');
-  	foreach ($result as $a) {
+	$result = $wpdb->get_results('select post_id, meta_value from ' . $wpdb->postmeta . ' as postmeta, '.$wpdb->posts.' as posts where postmeta.post_id = posts.ID AND posts.post_status = "publish" AND postmeta.meta_key = "expiration-date" AND postmeta.meta_value <= "' . mktime() . '"');
+  	if (!empty($result)) foreach ($result as $a) {
 		$post_result = $wpdb->get_var('select post_type from ' . $wpdb->posts .' where ID = '. $a->post_id);
 		if ($post_result == 'post') {
 			$expiredStatus = strtolower(get_option('expirationdateExpiredPostStatus'));

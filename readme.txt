@@ -41,6 +41,10 @@ This section describes how to install the plugin and get it working.
 
 == Changelog ==
 
+**Version 1.3.1**
+
+* Fixed issue of posts not being removed on some installs
+
 **Version 1.3**
 
 * Expiration date is now retained across all post status changes
