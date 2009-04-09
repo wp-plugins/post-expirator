@@ -43,7 +43,7 @@ This section describes how to install the plugin and get it working.
 
 **Version 1.3.1**
 
-* Fixed issue of posts not being removed on some installs
+* Fixed sporadic issue of expired posts not being removed
 
 **Version 1.3**
 
