@@ -1,11 +1,11 @@
 === Post Expirator ===
 Contributors: axelseaa
-Tags: expire, posts, pages
-Requires at least: 2.5
-Tested up to: 2.7
+Tags: expire, posts, pages, schedule
+Requires at least: 2.8
+Tested up to: 3.0
 Stable tag: trunk
 
-Allows you to add an expiration date (hourly) to posts which you can configure to either delete the post or change it to a draft.
+Allows you to add an expiration date (minute) to posts which you can configure to either delete the post or change it to a draft.
 
 == Description ==
 
@@ -22,6 +22,8 @@ default display format.  See the [PHP Date Function](http://us2.php.net/manual/e
 * type - defaults to full - valid options are full,date,time
 * dateformat - format set here will override the value set on the settings page
 * timeformat - format set here will override the value set on the settings page 
+
+Note on upgrading to 1.4: After upgrading, you may need to reset the cron schedules.  Following onscreen notice if prompted.  Previously scheduled posts will not be updated, they will be deleted referncing the old timezone setting.  If you wish to update them, you will need to manually update the expiration time.
 
 == Wordpress MU ==
 
@@ -40,6 +42,14 @@ This section describes how to install the plugin and get it working.
 2. Activate the plugin through the 'Plugins' menu in WordPress
 
 == Changelog ==
+
+**Version 1.4**
+
+NOTE: After upgrading, you may need to reset the cron schedules.  Following onscreen notice if prompted.  Previously scheduled posts will not be updated, they will be deleted referncing the old timezone setting.  If you wish to update them, you will need to manually update the expiration time.
+
+* Fixed compatability issues with Wordpress - plugin was originally coded for WPMU - should now work on both
+* Added ability to schedule post expiration by minute
+* Fixed timezone - now uses the same timezone as configured by the blog
 
 **Version 1.3.1**
 

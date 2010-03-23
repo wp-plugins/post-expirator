@@ -2,9 +2,9 @@
 /*
 Plugin Name: Post Expirator
 Plugin URI: http://wordpress.org/extend/plugins/post-expirator/
-Description: Allows you to add an expiration date (hourly) to posts which you can configure to either delete the post or change it to a draft.
+Description: Allows you to add an expiration date to posts which you can configure to either delete the post or change it to a draft.
 Author: Aaron Axelsen
-Version: 1.3.1
+Version: 1.4
 Author URI: http://www.frozenpc.net
 */
 
@@ -14,22 +14,47 @@ $expirationdateDefaultTimeFormat = 'g:ia';
 $expirationdateDefaultFooterContents = 'Post expires at EXPIRATIONTIME on EXPIRATIONDATE';
 $expirationdateDefaultFooterStyle = 'font-style: italic;';
 
-# Save for future use
-#function blah_blah_blah($array) {
-#       $array['minute'] = array(
-#               'interval' => 60,
-#               'display' => __('Once a Minute')
-#       );
-#	return $array;
-#}
-#add_filter('cron_schedules','blah_blah_blah');
-#print_r(wp_get_schedules());
+// Detect WPMU
+function postExpirator_is_wpmu() {
+        return file_exists(ABSPATH."/wpmu-settings.php");
+}
+
+// Timezone Setup
+function postExpiratorTimezoneSetup() {
+        if ( !$timezone_string = get_option( 'timezone_string' ) ) {
+                return false;
+        }
+
+	@date_default_timezone_set($timezone_string);
+}
+
+// Add cron interval of 60 seconds
+function postExpiratorAddCronMinutes($array) {
+       $array['postexpiratorminute'] = array(
+               'interval' => 60,
+               'display' => __('Once a Minute')
+       );
+	return $array;
+}
+add_filter('cron_schedules','postExpiratorAddCronMinutes');
+
+/**
+ * Add admin notice hook if cron schedule needs to be reset
+ */
+function postExpirationAdminNotice() {
+	if (postExpiratorCronStatus() === false) {
+		echo '<div class="error fade" style="background-color:red;"><p><strong>Post Expirator cron schedules need to be reset.  
+		<a href="'.admin_url('options-general.php?page=post-expirator.php&tab=upgrade').'" style="color: blue;">Click here to reset</a></strong></p></div>';
+	}
+}
+add_action('admin_notices','postExpirationAdminNotice');
 
 /** 
  * Function that does the actualy deleting - called by wp_cron
  */
 function expirationdate_delete_expired_posts() {
 	global $wpdb;
+	postExpiratorTimezoneSetup();
 	$result = $wpdb->get_results('select post_id, meta_value from ' . $wpdb->postmeta . ' as postmeta, '.$wpdb->posts.' as posts where postmeta.post_id = posts.ID AND posts.post_status = "publish" AND postmeta.meta_key = "expiration-date" AND postmeta.meta_value <= "' . mktime() . '"');
   	if (!empty($result)) foreach ($result as $a) {
 		$post_result = $wpdb->get_var('select post_type from ' . $wpdb->posts .' where ID = '. $a->post_id);
@@ -50,7 +75,10 @@ function expirationdate_delete_expired_posts() {
 		}
 	}
 }
-add_action ('expirationdate_delete_'.$current_blog->blog_id, 'expirationdate_delete_expired_posts');
+if (postExpirator_is_wpmu())
+	add_action ('expirationdate_delete_'.$current_blog->blog_id, 'expirationdate_delete_expired_posts');
+else
+	add_action ('expirationdate_delete', 'expirationdate_delete_expired_posts');
 
 /** 
  * Called at plugin activation
@@ -64,8 +92,12 @@ function expirationdate_activate () {
 	update_option('expirationdateFooterContents',$expirationdateDefaultFooterContents);
 	update_option('expirationdateFooterStyle',$expirationdateDefaultFooterStyle);
         update_option('expirationdateDisplayFooter',0);
+        postExpiratorTimezoneSetup();
 
-	wp_schedule_event(mktime(date('H'),0,0,date('m'),date('d'),date('Y')), 'hourly', 'expirationdate_delete_'.$current_blog->blog_id);
+	if (postExpirator_is_wpmu())
+		wp_schedule_event(mktime(date('H'),0,0,date('m'),date('d'),date('Y')), 'postexpiratorminute', 'expirationdate_delete_'.$current_blog->blog_id);
+	else
+		wp_schedule_event(mktime(date('H'),0,0,date('m'),date('d'),date('Y')), 'postexpiratorminute', 'expirationdate_delete');
 }
 register_activation_hook (__FILE__, 'expirationdate_activate');
 
@@ -81,7 +113,10 @@ function expirationdate_deactivate () {
         delete_option('expirationdateDisplayFooter');
         delete_option('expirationdateFooterContents');
         delete_option('expirationdateFooterStyle');
-	wp_clear_scheduled_hook('expirationdate_delete_'.$current_blog->blog_id);
+	if (postExpirator_is_wpmu())
+		wp_clear_scheduled_hook('expirationdate_delete_'.$current_blog->blog_id);
+	else
+		wp_clear_scheduled_hook('expirationdate_delete');
 }
 register_deactivation_hook (__FILE__, 'expirationdate_deactivate');
 
@@ -89,7 +124,7 @@ register_deactivation_hook (__FILE__, 'expirationdate_deactivate');
  * adds an 'Expires' column to the post display table.
  */
 function expirationdate_add_column ($columns) {
-  	$columns['expirationdate'] = 'Expires <br/><span style="font-size: 0.8em; font-weight: normal;">(YYYY/MM/DD HH)</span>';
+  	$columns['expirationdate'] = 'Expires <br/><span style="font-size: 0.8em; font-weight: normal;">(YYYY/MM/DD HH:MM)</span>';
   	return $columns;
 }
 add_filter ('manage_posts_columns', 'expirationdate_add_column');
@@ -102,9 +137,10 @@ function expirationdate_show_value ($column_name) {
 	global $wpdb, $post;
 	$id = $post->ID;
 	if ($column_name === 'expirationdate') {
+	        postExpiratorTimezoneSetup();
     		$query = "SELECT meta_value FROM $wpdb->postmeta WHERE meta_key = \"expiration-date\" AND post_id=$id";
     		$ed = $wpdb->get_var($query);
-    		echo ($ed ? date('Y/m/d H',$ed) : "Never");
+    		echo ($ed ? date('Y/m/d H:i',$ed) : "Never");
   	}
 }
 add_action ('manage_posts_custom_column', 'expirationdate_show_value');
@@ -131,18 +167,21 @@ add_action ('edit_page_form','expirationdate_meta_page');
  */
 function expirationdate_meta_box($post) { 
 	// Get default month
+	postExpiratorTimezoneSetup();
 	$expirationdatets = get_post_meta($post->ID,'expiration-date',true);
 	if (empty($expirationdatets)) {
 		$defaultmonth = date('F');
 		$defaultday = date('d');
 		$defaulthour = date('H');
 		$defaultyear = date('Y');
+		$defaultminute = date('i');
 		$disabled = 'disabled="disabled"';
 	} else {
 		$defaultmonth = date('F',$expirationdatets);
 		$defaultday = date('d',$expirationdatets);
 		$defaultyear = date('Y',$expirationdatets);
 		$defaulthour = date('H',$expirationdatets);
+		$defaultminute = date('i',$expirationdatets);
 
 		$enabled = ' checked="checked"';
 		$disabled = '';
@@ -157,6 +196,7 @@ function expirationdate_meta_box($post) {
 	   $rv[] = '<th style="text-align: left;">Year</th>';
 	   $rv[] = '<th style="text-align: left;"></th>';
 	   $rv[] = '<th style="text-align: left;">Hour (24 Hour Format)</th>';
+	   $rv[] = '<th style="text-align: left;">Minute</th>';
 	$rv[] = '</tr><tr>';
 	$rv[] = '<td>';
 	$rv[] = '<select name="expirationdate_month" id="expirationdate_month"'.$disabled.'">';
@@ -185,6 +225,8 @@ function expirationdate_meta_box($post) {
 	$rv[] = '</select>';
 	$rv[] = '</td><td>@</td><td>';
 	$rv[] = '<input type="text" id="expirationdate_hour" name="expirationdate_hour" value="'.$defaulthour.'" size="2"'.$disabled.'" />';
+	$rv[] = '</td><td>';
+	$rv[] = '<input type="text" id="expirationdate_minute" name="expirationdate_minute" value="'.$defaultminute.'" size="2"'.$disabled.'" />';
 	$rv[] = '<input type="hidden" name="expirationdate_formcheck" value="true" />';
 	$rv[] = '</td></tr></table>';
 
@@ -227,11 +269,13 @@ function expirationdate_ajax_add_meta(expireenable) {
 		document.getElementById('expirationdate_day').disabled = false;
 		document.getElementById('expirationdate_year').disabled = false;
 		document.getElementById('expirationdate_hour').disabled = false;
+		document.getElementById('expirationdate_minute').disabled = false;
 	} else {
 		document.getElementById('expirationdate_month').disabled = true;
 		document.getElementById('expirationdate_day').disabled = true;
 		document.getElementById('expirationdate_year').disabled = true;
 		document.getElementById('expirationdate_hour').disabled = true;
+		document.getElementById('expirationdate_minute').disabled = true;
 		var enable = 'false';
 	}
 	
@@ -257,7 +301,11 @@ add_action('admin_print_scripts', 'expirationdate_js_admin_header' );
 function expirationdate_get_blog_url() {
 	global $current_blog;
 	$schema = ( isset($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) == 'on' ) ? 'https://' : 'http://';
-        echo $schema.$current_blog->domain.$current_blog->path;
+	
+	if (postExpirator_is_wpmu())	
+        	echo $schema.$current_blog->domain.$current_blog->path;
+	else
+        	echo get_bloginfo('siteurl').'/';
 }
 
 /**
@@ -271,10 +319,12 @@ function expirationdate_update_post_meta($id) {
         $day = $_POST['expirationdate_day'];
         $year = $_POST['expirationdate_year'];
         $hour = $_POST['expirationdate_hour'];
+        $minute = $_POST['expirationdate_minute'];
 
 	if (isset($_POST['enable-expirationdate'])) {
+	        postExpiratorTimezoneSetup();
         	// Format Date
-        	$ts = mktime($hour,0,0,$month,$day,$year);
+        	$ts = mktime($hour,$minute,0,$month,$day,$year);
         	// Update Post Meta
 		delete_post_meta($id, 'expiration-date');
 	        update_post_meta($id, 'expiration-date', $ts, true);
@@ -285,17 +335,44 @@ function expirationdate_update_post_meta($id) {
 add_action('save_post','expirationdate_update_post_meta');
 
 /**
+ * Build the menu for the options page
+ */
+function postExpiratorMenuTabs($tab) {
+        echo '<h2>'._('Post Expirator Options').'</h2>';
+        echo '<p>';
+        echo '<a href="'.admin_url('options-general.php?page=post-expirator.php&tab=general').'"'.(empty($tab) || $tab == 'general' ? ' style="font-weight: bold; text-decoration:none;"' : '').'>General Settings</a> | ';
+        echo '<a href="'.admin_url('options-general.php?page=post-expirator.php&tab=upgrade').'"'.($tab == 'upgrade' ? ' style="font-weight: bold; text-decoration:none;"' : '').'>Upgrade</a>';
+        echo '</p><hr/>';
+}
+
+/**
+ *
+ */
+function postExpiratorMenu() {
+        $tab = $_GET['tab'];
+
+	echo '<div class="wrap">';
+	postExpiratorMenuTabs($tab);
+	if (empty($tab) || $tab == 'general') {
+		postExpiratorMenuGeneral();
+	} elseif ($tab == 'upgrade') {
+		postExpiratorMenuUpgrade();
+	}
+	echo '</div>';
+}
+
+/**
  * Hook's to add plugin page menu
  */
-function expirationdate_plugin_menu() {
-	add_submenu_page('options-general.php','Post Expirator Options','Post Expirator',9,basename(__FILE__),'expirationdate_show_options');
+function postExpiratorPluginMenu() {
+	add_submenu_page('options-general.php','Post Expirator Options','Post Expirator',9,basename(__FILE__),'postExpiratorMenu');
 }
-add_action('admin_menu', 'expirationdate_plugin_menu');
+add_action('admin_menu', 'postExpiratorPluginMenu');
 
 /**
  * Show the Expiration Date options page
  */
-function expirationdate_show_options() {
+function postExpiratorMenuGeneral() {
 
 	if ($_POST['expirationdateSave']) {
 		update_option('expirationdateExpiredPostStatus',$_POST['expired-post-status']);
@@ -353,8 +430,6 @@ function expirationdate_show_options() {
 	}
 
 	?>
-<div class="wrap">
-	<h2><?php _e('Post Expirator Options'); ?></h2>
 	<p>
 	The post expirator plugin sets a custom meta value, and then optionally allows you to select if you want the post
 	changed to a draft status or deleted when it expires.
@@ -450,9 +525,73 @@ function expirationdate_show_options() {
 			<input type="submit" name="expirationdateSave" value="Save" />
 		</p>
 	</form>
-</div>
 	<?php
 }
+
+function postExpiratorCronStatus() {
+	$names = array('expirationdate_delete','expirationdate_delete_');
+	// WPMU
+	if (postExpirator_is_wpmu()) {
+		global $current_blog;
+		$names[] = 'expirationdate_delete_'.$current_blog->blog_id;
+	}
+	$results = array();
+	foreach ( $names as $name ) {
+		array_push($results,wp_get_schedule($name));
+	}
+
+	foreach ( $results as $result ) {
+		if ($result == 'hourly') return false;
+	}
+	return true;
+}
+
+/**
+ * Reset all cron schedules for Post Expirator Plugin
+ */
+function postExpiratorResetCron() {
+        postExpiratorTimezoneSetup();
+        if (postExpirator_is_wpmu()) {
+		global $current_blog;
+                wp_clear_scheduled_hook('expirationdate_delete_'.$current_blog->blog_id);
+                wp_schedule_event(mktime(date('H'),0,0,date('m'),date('d'),date('Y')), 'postexpiratorminute', 'expirationdate_delete_'.$current_blog->blog_id);
+        } else {
+                wp_clear_scheduled_hook('expirationdate_delete');
+                wp_clear_scheduled_hook('expirationdate_delete_');
+                wp_schedule_event(mktime(date('H'),0,0,date('m'),date('d'),date('Y')), 'postexpiratorminute', 'expirationdate_delete');
+	}
+}
+
+function postExpiratorMenuUpgrade() {
+	if (isset($_POST['reset-cron-schedules'])) {
+		postExpiratorResetCron();
+                echo "<div id='message' class='updated fade'><p>Reset Cron Scheules!</p></div>";
+	}
+
+	$status = postExpiratorCronStatus();
+	if ($status) 
+		$cronstatus = '<span style="color:green">OK</span>';
+	else
+		$cronstatus = '<span style="color:red">RESET NEEDED</span>';
+
+	?>
+        <form method="post" id="postExpiratorMenuUpgrade">
+                <h3>Upgrade</h3>
+                <table class="form-table">
+                        <tr valign-"top">
+                                <th scope="row"><label for="reset-cron-schedules">Reset Cron Schedules:</label></th>
+                                <td>
+					<input type="submit" name="reset-cron-schedules" id="reset-cron-schedules" value="Reset" />
+					Status: <?php echo $cronstatus; ?>
+                                        <br/>
+					Resets the cron scheduler and removes any old or stray entries.
+                                </td>
+                        </tr>
+                </table>
+        </form>
+	<?php
+}
+
 
 // [postexpirator format="l F jS, Y g:ia" tz="foo"]
 function postexpirator_shortcode($atts) {
