@@ -364,7 +364,8 @@ add_action('save_post','expirationdate_update_post_meta');
 function postExpiratorMenuTabs($tab) {
         echo '<h2>'.__('Post Expirator Options','post-expirator').'</h2>';
         echo '<p>';
-        echo '<a href="'.admin_url('options-general.php?page=post-expirator.php&tab=general').'"'.(empty($tab) || $tab == 'general' ? ' style="font-weight: bold; text-decoration:none;"' : '>').__('General Settings','post-expirator').'</a> | ';
+	if (empty($tab)) $tab = 'general';
+        echo '<a href="'.admin_url('options-general.php?page=post-expirator.php&tab=general').'"'.($tab == 'general' ? ' style="font-weight: bold; text-decoration:none;"' : '').'>'.__('General Settings','post-expirator').'</a> | ';
         echo '<a href="'.admin_url('options-general.php?page=post-expirator.php&tab=upgrade').'"'.($tab == 'upgrade' ? ' style="font-weight: bold; text-decoration:none;"' : '').'>'.__('Upgrade','post-expirator').'</a>';
         echo '</p><hr/>';
 }
