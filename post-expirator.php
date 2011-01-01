@@ -4,14 +4,20 @@ Plugin Name: Post Expirator
 Plugin URI: http://wordpress.org/extend/plugins/post-expirator/
 Description: Allows you to add an expiration date to posts which you can configure to either delete the post or change it to a draft.
 Author: Aaron Axelsen
-Version: 1.4
-Author URI: http://www.frozenpc.net
+Version: 1.4.1
+Author URI: http://postexpirator.tuxdocs.net/
+Translation: Thierry (http://palijn.info)
+Text Domain: post-expirator
 */
 
+/* Load translation, if it exists */
+$plugin_dir = basename(dirname(__FILE__));
+load_plugin_textdomain( 'post-expirator', null, $plugin_dir.'/languages/' );
+
 // Default Values
-$expirationdateDefaultDateFormat = 'l F jS, Y';
-$expirationdateDefaultTimeFormat = 'g:ia';
-$expirationdateDefaultFooterContents = 'Post expires at EXPIRATIONTIME on EXPIRATIONDATE';
+$expirationdateDefaultDateFormat = __('l F jS, Y','post-expirator');
+$expirationdateDefaultTimeFormat = __('g:ia','post-expirator');
+$expirationdateDefaultFooterContents = __('Post expires at EXPIRATIONTIME on EXPIRATIONDATE','post-expirator');
 $expirationdateDefaultFooterStyle = 'font-style: italic;';
 
 // Detect WPMU
@@ -32,7 +38,7 @@ function postExpiratorTimezoneSetup() {
 function postExpiratorAddCronMinutes($array) {
        $array['postexpiratorminute'] = array(
                'interval' => 60,
-               'display' => __('Once a Minute')
+               'display' => __('Once a Minute','post-expirator')
        );
 	return $array;
 }
@@ -43,8 +49,11 @@ add_filter('cron_schedules','postExpiratorAddCronMinutes');
  */
 function postExpirationAdminNotice() {
 	if (postExpiratorCronStatus() === false) {
-		echo '<div class="error fade" style="background-color:red;"><p><strong>Post Expirator cron schedules need to be reset.  
-		<a href="'.admin_url('options-general.php?page=post-expirator.php&tab=upgrade').'" style="color: blue;">Click here to reset</a></strong></p></div>';
+		echo '<div class="error fade" style="background-color:red;"><p><strong>';
+		_e('Post Expirator cron schedules need to be reset','post-expirator');
+		echo('<a href="'.admin_url('options-general.php?page=post-expirator.php&tab=upgrade').'" style="color: blue;">');
+		_e('Click here to reset','post-expirator');
+		echo('</a></strong></p></div>');
 	}
 }
 add_action('admin_notices','postExpirationAdminNotice');
@@ -55,7 +64,8 @@ add_action('admin_notices','postExpirationAdminNotice');
 function expirationdate_delete_expired_posts() {
 	global $wpdb;
 	postExpiratorTimezoneSetup();
-	$result = $wpdb->get_results('select post_id, meta_value from ' . $wpdb->postmeta . ' as postmeta, '.$wpdb->posts.' as posts where postmeta.post_id = posts.ID AND posts.post_status = "publish" AND postmeta.meta_key = "expiration-date" AND postmeta.meta_value <= "' . mktime() . '"');
+	$time_delete = time();
+	$result = $wpdb->get_results('select post_id, meta_value from ' . $wpdb->postmeta . ' as postmeta, '.$wpdb->posts.' as posts where postmeta.post_id = posts.ID AND posts.post_status = "publish" AND postmeta.meta_key = "expiration-date" AND postmeta.meta_value <= "' . $time_delete . '"');
   	if (!empty($result)) foreach ($result as $a) {
 		$post_result = $wpdb->get_var('select post_type from ' . $wpdb->posts .' where ID = '. $a->post_id);
 		if ($post_result == 'post') {
@@ -124,7 +134,7 @@ register_deactivation_hook (__FILE__, 'expirationdate_deactivate');
  * adds an 'Expires' column to the post display table.
  */
 function expirationdate_add_column ($columns) {
-  	$columns['expirationdate'] = 'Expires <br/><span style="font-size: 0.8em; font-weight: normal;">(YYYY/MM/DD HH:MM)</span>';
+  	$columns['expirationdate'] = __('Expires','post-expirator').'<br/><span style="font-size: 0.8em; font-weight: normal;">(YYYY/MM/DD HH:MM)</span>';
   	return $columns;
 }
 add_filter ('manage_posts_columns', 'expirationdate_add_column');
@@ -140,27 +150,30 @@ function expirationdate_show_value ($column_name) {
 	        postExpiratorTimezoneSetup();
     		$query = "SELECT meta_value FROM $wpdb->postmeta WHERE meta_key = \"expiration-date\" AND post_id=$id";
     		$ed = $wpdb->get_var($query);
-    		echo ($ed ? date('Y/m/d H:i',$ed) : "Never");
+    		echo ($ed ? date('Y/m/d H:i',$ed) : __("Never",'post-expirator'));
   	}
 }
 add_action ('manage_posts_custom_column', 'expirationdate_show_value');
 add_action ('manage_pages_custom_column', 'expirationdate_show_value');
 
 /**
- * Add's hooks to get the meta box added to post
- */
-function expirationdate_meta_post() {
-	add_meta_box('expirationdatediv', __('Post Expirator'), 'expirationdate_meta_box', 'post', 'advanced', 'high');
-}
-add_action ('dbx_post_advanced','expirationdate_meta_post');
-
-/**
- * Add's hooks to get the meta box added to page
+ * Adds hooks to get the meta box added to page
  */
 function expirationdate_meta_page() {
-	add_meta_box('expirationdatediv', __('Post Expirator'), 'expirationdate_meta_box', 'page', 'advanced', 'high');
+	add_meta_box('expirationdatediv', __('Post Expirator','post-expirator'), 'expirationdate_meta_box', 'page', 'advanced', 'high');
 }
 add_action ('edit_page_form','expirationdate_meta_page');
+
+/**
+ * Adds hooks to get the meta box added to custom post types
+ */
+function expirationdate_meta_custom() {
+    $custom_post_types = get_post_types();
+    foreach ($custom_post_types as $t) {
+       	add_meta_box('expirationdatediv', __('Post Expirator','post-expirator'), 'expirationdate_meta_box', $t, 'advanced', 'high');
+    }
+}
+add_action ('edit_form_advanced','expirationdate_meta_custom');
 
 /**
  * Actually adds the meta box
@@ -189,45 +202,55 @@ function expirationdate_meta_box($post) {
 
 	$rv = array();
 	$rv[] = '<p><input type="checkbox" name="enable-expirationdate" id="enable-expirationdate" value="checked"'.$enabled.' onclick="expirationdate_ajax_add_meta(\'enable-expirationdate\')" />';
-	$rv[] = '<label for="enable-expirationdate">Enable Post Expiration</label></p>';
+	$rv[] = '<label for="enable-expirationdate">'.__('Enable Post Expiration','post-expirator').'</label></p>';
 	$rv[] = '<table><tr>';
-	   $rv[] = '<th style="text-align: left;">Month</th>';
-	   $rv[] = '<th style="text-align: left;">Day</th>';
-	   $rv[] = '<th style="text-align: left;">Year</th>';
-	   $rv[] = '<th style="text-align: left;"></th>';
-	   $rv[] = '<th style="text-align: left;">Hour (24 Hour Format)</th>';
-	   $rv[] = '<th style="text-align: left;">Minute</th>';
+	   $rv[] = '<th style="text-align: left;">'.__('Year','post-expirator').'</th>';
+	   $rv[] = '<th style="text-align: left;">'.__('Month','post-expirator').'</th>';
+	   $rv[] = '<th style="text-align: left;">'.__('Day','post-expirator').'</th>';
 	$rv[] = '</tr><tr>';
-	$rv[] = '<td>';
-	$rv[] = '<select name="expirationdate_month" id="expirationdate_month"'.$disabled.'">';
-	for($i = 1; $i <= 12; $i++) {
-		if ($defaultmonth == date('F',mktime(0, 0, 0, $i, 1, date("Y"))))
-			$selected = ' selected="selected"';
-		else
-			$selected = '';
-		$rv[] = '<option value="'.date('m',mktime(0, 0, 0, $i, 1, date("Y"))).'"'.$selected.'>'.date('F',mktime(0, 0, 0, $i, 1, date("Y"))).'</option>';
-	}
-	$rv[] = '</select>';
+	$rv[] = '<td>';	
+		$rv[] = '<select name="expirationdate_year" id="expirationdate_year"'.$disabled.'">';
+		$currentyear = date('Y');
+		if ($defaultyear < $currentyear)
+			$currentyear = $defaultyear;
+		for($i = $currentyear; $i < $currentyear + 8; $i++) {
+			if ($i == $defaultyear)
+				$selected = ' selected="selected"';
+			else
+				$selected = '';
+			$rv[] = '<option'.$selected.'>'.($i).'</option>';
+		}
+		$rv[] = '</select>';
 	$rv[] = '</td><td>';
-	$rv[] = '<input type="text" id="expirationdate_day" name="expirationdate_day" value="'.$defaultday.'" size="2"'.$disabled.'" />,'; 
+		$rv[] = '<select name="expirationdate_month" id="expirationdate_month"'.$disabled.'">';
+		for($i = 1; $i <= 12; $i++) {
+			if ($defaultmonth == date('F',mktime(0, 0, 0, $i, 1, date("Y"))))
+				$selected = ' selected="selected"';
+			else
+				$selected = '';
+			$rv[] = '<option value="'.date('m',mktime(0, 0, 0, $i, 1, date("Y"))).'"'.$selected.'>'.date(__('F','post-expirator'),mktime(0, 0, 0, $i, 1, date("Y"))).'</option>';
+		}
+	$rv[] = '</select>';	 
 	$rv[] = '</td><td>';
-	$rv[] = '<select name="expirationdate_year" id="expirationdate_year"'.$disabled.'">';
-	$currentyear = date('Y');
-	if ($defaultyear < $currentyear)
-		$currentyear = $defaultyear;
-	for($i = $currentyear; $i < $currentyear + 8; $i++) {
-		if ($i == $defaultyear)
-			$selected = ' selected="selected"';
-		else
-			$selected = '';
-		$rv[] = '<option'.$selected.'>'.($i).'</option>';
-	}
-	$rv[] = '</select>';
-	$rv[] = '</td><td>@</td><td>';
-	$rv[] = '<input type="text" id="expirationdate_hour" name="expirationdate_hour" value="'.$defaulthour.'" size="2"'.$disabled.'" />';
-	$rv[] = '</td><td>';
-	$rv[] = '<input type="text" id="expirationdate_minute" name="expirationdate_minute" value="'.$defaultminute.'" size="2"'.$disabled.'" />';
-	$rv[] = '<input type="hidden" name="expirationdate_formcheck" value="true" />';
+		$rv[] = '<input type="text" id="expirationdate_day" name="expirationdate_day" value="'.$defaultday.'" size="2"'.$disabled.'" />,';
+	$rv[] = '</td></tr><tr>';
+	   $rv[] = '<th style="text-align: left;"></th>';
+	   $rv[] = '<th style="text-align: left;">'.__('Hour','post-expirator').'('.date('T',mktime(0, 0, 0, $i, 1, date("Y"))).')</th>';
+	   $rv[] = '<th style="text-align: left;">'.__('Minute','post-expirator').'</th>';
+   	$rv[] = '</tr><tr>';
+	$rv[] = '<td>@</td><td>';
+	 /* $rv[] = '<input type="text" id="expirationdate_hour" name="expirationdate_hour" value="'.$defaulthour.'" size="2"'.$disabled.'" />'; */
+	 	$rv[] = '<select name="expirationdate_hour" id="expirationdate_hour"'.$disabled.'">';
+		for($i = 1; $i <= 24; $i++) {
+			if ($defaulthour == date('H',mktime($i, 0, 0, date("n"), date("j"), date("Y"))))
+				$selected = ' selected="selected"';
+			else
+				$selected = '';
+			$rv[] = '<option value="'.date('H',mktime($i, 0, 0, date("n"), date("j"), date("Y"))).'"'.$selected.'>'.date(__('H','post-expirator'),mktime($i, 0, 0, date("n"), date("j"), date("Y"))).'</option>';
+		}
+		$rv[] = '</td><td>';
+		$rv[] = '<input type="text" id="expirationdate_minute" name="expirationdate_minute" value="'.$defaultminute.'" size="2"'.$disabled.'" />';
+		$rv[] = '<input type="hidden" name="expirationdate_formcheck" value="true" />';
 	$rv[] = '</td></tr></table>';
 
 	$rv[] = '<div id="expirationdate_ajax_result"></div>';
@@ -284,7 +307,7 @@ function expirationdate_ajax_add_meta(expireenable) {
 	mysack.setVar( "action", "expirationdate_ajax" );
 	mysack.setVar( "enable", enable );
 	mysack.encVar( "cookie", document.cookie, false );
-	mysack.onError = function() { alert('Ajax error in looking up elevation' )};
+	mysack.onError = function() { alert('Ajax error in enabling post expiration' )};
 	mysack.runAJAX();
 
 	return true;
@@ -325,6 +348,7 @@ function expirationdate_update_post_meta($id) {
 	        postExpiratorTimezoneSetup();
         	// Format Date
         	$ts = mktime($hour,$minute,0,$month,$day,$year);
+
         	// Update Post Meta
 		delete_post_meta($id, 'expiration-date');
 	        update_post_meta($id, 'expiration-date', $ts, true);
@@ -338,10 +362,10 @@ add_action('save_post','expirationdate_update_post_meta');
  * Build the menu for the options page
  */
 function postExpiratorMenuTabs($tab) {
-        echo '<h2>'._('Post Expirator Options').'</h2>';
+        echo '<h2>'.__('Post Expirator Options','post-expirator').'</h2>';
         echo '<p>';
-        echo '<a href="'.admin_url('options-general.php?page=post-expirator.php&tab=general').'"'.(empty($tab) || $tab == 'general' ? ' style="font-weight: bold; text-decoration:none;"' : '').'>General Settings</a> | ';
-        echo '<a href="'.admin_url('options-general.php?page=post-expirator.php&tab=upgrade').'"'.($tab == 'upgrade' ? ' style="font-weight: bold; text-decoration:none;"' : '').'>Upgrade</a>';
+        echo '<a href="'.admin_url('options-general.php?page=post-expirator.php&tab=general').'"'.(empty($tab) || $tab == 'general' ? ' style="font-weight: bold; text-decoration:none;"' : '>').__('General Settings','post-expirator').'</a> | ';
+        echo '<a href="'.admin_url('options-general.php?page=post-expirator.php&tab=upgrade').'"'.($tab == 'upgrade' ? ' style="font-weight: bold; text-decoration:none;"' : '').'>'.__('Upgrade','post-expirator').'</a>';
         echo '</p><hr/>';
 }
 
@@ -365,7 +389,7 @@ function postExpiratorMenu() {
  * Hook's to add plugin page menu
  */
 function postExpiratorPluginMenu() {
-	add_submenu_page('options-general.php','Post Expirator Options','Post Expirator',9,basename(__FILE__),'postExpiratorMenu');
+	add_submenu_page('options-general.php',__('Post Expirator Options','post-expirator'),__('Post Expirator','post-expirator'),9,basename(__FILE__),'postExpiratorMenu');
 }
 add_action('admin_menu', 'postExpiratorPluginMenu');
 
@@ -382,7 +406,9 @@ function postExpiratorMenuGeneral() {
 		update_option('expirationdateDisplayFooter',$_POST['expired-display-footer']);
 		update_option('expirationdateFooterContents',$_POST['expired-footer-contents']);
 		update_option('expirationdateFooterStyle',$_POST['expired-footer-style']);
-                echo "<div id='message' class='updated fade'><p>Saved Options!</p></div>";
+                echo "<div id='message' class='updated fade'><p>";
+                _e('Saved Options!','post-expirator');
+                echo "</p></div>";
 	}
 
 	// Get Option
@@ -431,79 +457,76 @@ function postExpiratorMenuGeneral() {
 
 	?>
 	<p>
-	The post expirator plugin sets a custom meta value, and then optionally allows you to select if you want the post
-	changed to a draft status or deleted when it expires.
+	<?php _e('The post expirator plugin sets a custom meta value, and then optionally allows you to select if you want the post changed to a draft status or deleted when it expires.','post-expirator'); ?>
 	</p>
-	<p>Valid [postexpiration] attributes:
+	<p>
+	<?php _e('Valid [postexpiration] attributes:','post-expirator'); ?>
 	<ul>
-		<li>type - defaults to full - valid options are full,date,time</li>
-		<li>dateformat - format set here will override the value set on the settings page</li>
-		<li>timeformat - format set here will override the value set on the settings page</li>
+		<li><?php _e('type - defaults to full - valid options are full,date,time','post-expirator');?></li>
+		<li><?php _e('dateformat - format set here will override the value set on the settings page','post-expirator');?></li>
+		<li><?php _e('timeformat - format set here will override the value set on the settings page','post-expirator');?></li>
 	</ul>
 	</p>
 	<form method="post" id="expirationdate_save_options">
-		<h3>Defaults</h3>
+		<h3><?php _e('Defaults','post-expirator'); ?></h3>
 		<table class="form-table">
 			<tr valign-"top">
-				<th scope="row"><label for="expired-post-status">Set Post To:</label></th>
+				<th scope="row"><label for="expired-post-status"><?php _e('Set Post To:','post-expirator'); ?></label></th>
 				<td>
 					<select name="expired-post-status" id="expired-post-status">
-					<option<?php if ($expirationdateExpiredPostStatus == 'Draft'){ echo ' selected="selected"';}?>>Draft</option>
-					<option<?php if ($expirationdateExpiredPostStatus == 'Delete'){ echo ' selected="selected"';}?>>Delete</option>
+					<option <?php if ($expirationdateExpiredPostStatus == 'Draft'){ echo 'selected="selected"';} ?> value="Draft"><?php _e('Draft','post-expirator');?></option>
+					<option <?php if ($expirationdateExpiredPostStatus == 'Delete'){ echo 'selected="selected"';} ?> value="Delete"><?php _e('Delete','post-expirator');?></option>
 					</select>	
 					<br/>
-					Select whether the post should be deleted or changed to a draft at expiration time.
+					<?php _e('Select whether the post should be deleted or changed to a draft at expiration time.','post-expirator');?>
 				</td>
 			</tr>
 			<tr valign-"top">
-				<th scope="row"><label for="expired-page-status">Set Page To:</label></th>
+				<th scope="row"><label for="expired-page-status"><?php _e('Set Page To:','post-expirator');?></label></th>
 				<td>
 					<select name="expired-page-status" id="expired-page-status">
-					<option<?php if ($expirationdateExpiredPageStatus == 'Draft'){ echo ' selected="selected"';}?>>Draft</option>
-					<option<?php if ($expirationdateExpiredPageStatus == 'Delete'){ echo ' selected="selected"';}?>>Delete</option>
+					<option<?php if ($expirationdateExpiredPageStatus == 'Draft'){ echo ' selected="selected"';}?> value="Draft"><?php _e('Draft','post-expirator');?></option>
+					<option<?php if ($expirationdateExpiredPageStatus == 'Delete'){ echo ' selected="selected"';}?> value="Delete"><?php _e('Delete','post-expirator');?></option>
 					</select>	
 					<br/>
-					Select whether the page should be deleted or changed to a draft at expiration time.
+					<?php _e('Select whether the page should be deleted or changed to a draft at expiration time.','post-expirator');?>
 				</td>
 			</tr>
 			<tr valign-"top">
-				<th scope="row"><label for="expired-default-date-format">Date Format:</label></th>
+				<th scope="row"><label for="expired-default-date-format"><?php _e('Date Format:','post-expirator');?></label></th>
 				<td>
 					<input type="text" name="expired-default-date-format" id="expired-default-date-format" value="<?php echo $expirationdateDefaultDateFormat ?>" size="25" /> (<?php echo date("$expirationdateDefaultDateFormat") ?>)
 					<br/>
-					The default format to use when displaying the expiration date within a post using the [postexpirator] 
-					shortcode or within the footer.  For information on valid formatting options, see: <a href="http://us2.php.net/manual/en/function.date.php" target="_blank">PHP Date Function</a>.
+					<?php _e('The default format to use when displaying the expiration date within a post using the [postexpirator] shortcode or within the footer.  For information on valid formatting options, see: <a href="http://us2.php.net/manual/en/function.date.php" target="_blank">PHP Date Function</a>.','post-expirator'); ?>
 				</td>
 			</tr>
 			<tr valign-"top">
-				<th scope="row"><label for="expired-default-time-format">Time Format:</label></th>
+				<th scope="row"><label for="expired-default-time-format"><?php _e('Time Format:','post-expirator');?></label></th>
 				<td>
 					<input type="text" name="expired-default-time-format" id="expired-default-time-format" value="<?php echo $expirationdateDefaultTimeFormat ?>" size="25" /> (<?php echo date("$expirationdateDefaultTimeFormat") ?>)
 					<br/>
-					The default format to use when displaying the expiration time within a post using the [postexpirator] 
-					shortcode or within the footer.  For information on valid formatting options, see: <a href="http://us2.php.net/manual/en/function.date.php" target="_blank">PHP Date Function</a>.
+					<?php _e('The default format to use when displaying the expiration time within a post using the [postexpirator] shortcode or within the footer.  For information on valid formatting options, see: <a href="http://us2.php.net/manual/en/function.date.php" target="_blank">PHP Date Function</a>.','post-expirator'); ?>
 				</td>
 			</tr>
 		</table>
-		<h3>Post Footer Display</h3>
-		<p>Enabling this below will display the expiration date automatically at the end of any post which is set to expire.</p>
+		<h3><?php _e('Post Footer Display','post-expirator');?></h3>
+		<p><?php _e('Enabling this below will display the expiration date automatically at the end of any post which is set to expire.','post-expirator');?></p>
 		<table class="form-table">
 			<tr valign-"top">
-				<th scope="row">Show in post footer?</th>
+				<th scope="row"><?php _e('Show in post footer?','post-expirator');?></th>
 				<td>
-					<input type="radio" name="expired-display-footer" id="expired-display-footer-true" value="1" <?php echo $expireddisplayfooterenabled ?>/> <label for="expired-display-footer-true">Enabled</label> 
-					<input type="radio" name="expired-display-footer" id="expired-display-footer-false" value="0" <?php echo $expireddisplayfooterdisabled ?>/> <label for="expired-display-footer-false">Disabled</label>
+					<input type="radio" name="expired-display-footer" id="expired-display-footer-true" value="1" <?php echo $expireddisplayfooterenabled ?>/> <label for="expired-display-footer-true"><?php _e('Enabled','post-expirator');?></label> 
+					<input type="radio" name="expired-display-footer" id="expired-display-footer-false" value="0" <?php echo $expireddisplayfooterdisabled ?>/> <label for="expired-display-footer-false"><?php _e('Disabled','post-expirator');?></label>
 					<br/>
-					This will enable or disable displaying the post expiration date in the post footer.
+					<?php _e('This will enable or disable displaying the post expiration date in the post footer.','post-expirator');?>
 				</td>
 			</tr>
 			<tr valign-"top">
-				<th scope="row"><label for="expired-footer-contents">Footer Contents:</label></th>
+				<th scope="row"><label for="expired-footer-contents"><?php _e('Footer Contents:','post-expirator');?></label></th>
 				<td>
 					<textarea id="expired-footer-contents" name="expired-footer-contents" rows="3" cols="50"><?php echo $expirationdateFooterContents; ?></textarea>
 					<br/>
-					Enter the text you would like to appear at the bottom of every post that will expire.  The following placeholders will be replaced
-					with the post expiration date in the following format:
+					<?php _e('Enter the text you would like to appear at the bottom of every post that will expire.  The following placeholders will be replaced with the post expiration date in the following format:','post-expirator');?>
 					<ul>
 						<li>EXPIRATIONFULL -> <?php echo date("$expirationdateDefaultDateFormat $expirationdateDefaultTimeFormat") ?></li>
 						<li>EXPIRATIONDATE -> <?php echo date("$expirationdateDefaultDateFormat") ?></li>
@@ -512,17 +535,17 @@ function postExpiratorMenuGeneral() {
 				</td>
 			</tr>
 			<tr valign-"top">
-				<th scope="row"><label for="expired-footer-style">Footer Style:</label></th>
+				<th scope="row"><label for="expired-footer-style"><?php _e('Footer Style:','post-expirator');?></label></th>
 				<td>
 					<input type="text" name="expired-footer-style" id="expired-footer-style" value="<?php echo $expirationdateFooterStyle ?>" size="25" />
-					(<span style="<?php echo $expirationdateFooterStyle ?>">This post will expire on <?php echo date("$expirationdateDefaultDateFormat $expirationdateDefaultTimeFormat"); ?></span>)
+					(<span style="<?php echo $expirationdateFooterStyle ?>"><?php _e('This post will expire on','post-expirator');?> <?php echo date("$expirationdateDefaultDateFormat $expirationdateDefaultTimeFormat"); ?></span>)
 					<br/>
-					The inline css which will be used to style the footer text.
+					<?php _e('The inline css which will be used to style the footer text.','post-expirator');?>
 				</td>
 			</tr>
 		</table>
 		<p class="submit">
-			<input type="submit" name="expirationdateSave" value="Save" />
+			<input type="submit" name="expirationdateSave" value="<?php _e('Save','post-expirator');?>" />
 		</p>
 	</form>
 	<?php
@@ -565,26 +588,26 @@ function postExpiratorResetCron() {
 function postExpiratorMenuUpgrade() {
 	if (isset($_POST['reset-cron-schedules'])) {
 		postExpiratorResetCron();
-                echo "<div id='message' class='updated fade'><p>Reset Cron Scheules!</p></div>";
+                echo "<div id='message' class='updated fade'><p>"; _e('Cron Schedules Reset!','post-expirator'); echo "</p></div>";
 	}
 
 	$status = postExpiratorCronStatus();
 	if ($status) 
-		$cronstatus = '<span style="color:green">OK</span>';
+		$cronstatus = '<span style="color:green">'.__('OK','post-expirator').'</span>';
 	else
-		$cronstatus = '<span style="color:red">RESET NEEDED</span>';
+		$cronstatus = '<span style="color:red">'.__('RESET NEEDED','post-expirator').'</span>';
 
 	?>
         <form method="post" id="postExpiratorMenuUpgrade">
-                <h3>Upgrade</h3>
+                <h3><?php _e('Upgrade','post-expirator');?></h3>
                 <table class="form-table">
                         <tr valign-"top">
-                                <th scope="row"><label for="reset-cron-schedules">Reset Cron Schedules:</label></th>
+                                <th scope="row"><label for="reset-cron-schedules"><?php _e('Reset Cron Schedules:','post-expirator');?></label></th>
                                 <td>
-					<input type="submit" name="reset-cron-schedules" id="reset-cron-schedules" value="Reset" />
-					Status: <?php echo $cronstatus; ?>
+					<input type="submit" name="reset-cron-schedules" id="reset-cron-schedules" value="<?php _e('Reset','post-expirator');?>" />
+					<?php _e('Status:','post-expirator');?> <?php echo $cronstatus; ?>
                                         <br/>
-					Resets the cron scheduler and removes any old or stray entries.
+					<?php _e('Resets the cron scheduler and removes any old or stray entries.','post-expirator');?>
                                 </td>
                         </tr>
                 </table>
@@ -637,6 +660,7 @@ function postexpirator_add_footer($text) {
 	if ($displayFooter === false || $displayFooter == 0)
 		return $text;
 
+	postExpiratorTimezoneSetup();
         $expirationdatets = get_post_meta($post->ID,'expiration-date',true);
 	if (!is_numeric($expirationdatets))
 		return $text;
