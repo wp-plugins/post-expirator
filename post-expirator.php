@@ -410,7 +410,7 @@ function postExpiratorMenuGeneral() {
                 _e('Saved Options!','post-expirator');
                 echo "</p></div>";
 	}
-
+	postExpiratorTimezoneSetup();
 	// Get Option
 	$expirationdateExpiredPostStatus = get_option('expirationdateExpiredPostStatus');
 	if (empty($expirationdateExpiredPostStatus))
