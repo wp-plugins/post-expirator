@@ -4,7 +4,7 @@ Plugin Name: Post Expirator
 Plugin URI: http://wordpress.org/extend/plugins/post-expirator/
 Description: Allows you to add an expiration date to posts which you can configure to either delete the post or change it to a draft.
 Author: Aaron Axelsen
-Version: 1.4.1
+Version: 1.4.2
 Author URI: http://postexpirator.tuxdocs.net/
 Translation: Thierry (http://palijn.info)
 Text Domain: post-expirator
