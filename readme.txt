@@ -3,7 +3,7 @@ Contributors: axelseaa
 Tags: expire, posts, pages, schedule
 Requires at least: 2.9
 Tested up to: 3.1
-Stable tag: 1.4.1
+Stable tag: 1.4.2
 
 Allows you to add an expiration date (minute) to posts which you can configure to either delete the post or change it to a draft.
 
@@ -42,6 +42,12 @@ This section describes how to install the plugin and get it working.
 2. Activate the plugin through the 'Plugins' menu in WordPress
 
 == Changelog ==
+
+**Version 1.4.2**
+
+* Added post expirator POT to /languages folder
+* Fixed issue with plugin admin navigation
+* Fixed timezone issue on plugin options screen
 
 **Version 1.4.1**
 
