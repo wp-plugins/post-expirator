@@ -17,6 +17,8 @@ The plugin hooks into the wp cron processes and runs every hour.
 The expiration date can be displayed within the actual post by using the [postexpirator] tag.  The format attribute will override the plugin 
 default display format.  See the [PHP Date Function](http://us2.php.net/manual/en/function.date.php) for valid date/time format options. 
 
+Plugin homepage [WordPress Post Expirator](http://postexpirator.tuxdocs.net).
+
 **[postexpirator] shortcode attributes**
 
 * type - defaults to full - valid options are full,date,time
