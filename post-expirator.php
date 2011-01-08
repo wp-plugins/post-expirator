@@ -4,7 +4,7 @@ Plugin Name: Post Expirator
 Plugin URI: http://wordpress.org/extend/plugins/post-expirator/
 Description: Allows you to add an expiration date to posts which you can configure to either delete the post or change it to a draft.
 Author: Aaron Axelsen
-Version: 1.4.2
+Version: 1.4.3
 Author URI: http://postexpirator.tuxdocs.net/
 Translation: Thierry (http://palijn.info)
 Text Domain: post-expirator
@@ -20,9 +20,12 @@ $expirationdateDefaultTimeFormat = __('g:ia','post-expirator');
 $expirationdateDefaultFooterContents = __('Post expires at EXPIRATIONTIME on EXPIRATIONDATE','post-expirator');
 $expirationdateDefaultFooterStyle = 'font-style: italic;';
 
-// Detect WPMU
+// Detect WPMU/MultiSite
 function postExpirator_is_wpmu() {
-        return file_exists(ABSPATH."/wpmu-settings.php");
+	if (function_exists('is_multisite'))
+		return is_multisite();
+	else
+		return file_exists(ABSPATH."/wpmu-settings.php");
 }
 
 // Timezone Setup
