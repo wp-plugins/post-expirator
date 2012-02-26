@@ -11,7 +11,9 @@ post categories at expiration time.
 == Description ==
 
 The Post Expirator plugin allows the user to set expiration dates for both posts and pages.  There is a configuration option page in the plugins 
-area that will allow you to seperataly control whether or not posts/pages are wither deleted or changed to draft status.
+area that will allow you to seperataly control whether or not posts/pages are either deleted or changed to draft status.  Additionally you can
+also choose to have the post categories change at expiration time.  If you choose to change the post category, the default action of changing 
+the status will be ignored.
 
 The plugin hooks into the wp cron processes and runs every minute.
 
@@ -26,20 +28,13 @@ Plugin homepage [WordPress Post Expirator](http://postexpirator.tuxdocs.net).
 * dateformat - format set here will override the value set on the settings page
 * timeformat - format set here will override the value set on the settings page 
 
-== Wordpress MU ==
-
-This plugin is compatible with Wordpress 3.0+, however currently it will not work in the mu-plugins folder due to the plugin activation 
-functions.
-
-== Credits ==
-
-Plugin is based on the orginial [Expiration Date](http://www.hostscope.com/wordpress-plugins/the-expirationdate-wordpress-plugin/) plugin by jrrl. 
+This plugin is fully compatbily with WordPress Multisite Mode.
 
 == Installation ==
 
 This section describes how to install the plugin and get it working.
 
-1. Upload `plugin-name.php` to the `/wp-content/plugins/` directory
+1. Unzip the plugin contents to the `/wp-content/plugins/post-expirator/` directory
 2. Activate the plugin through the 'Plugins' menu in WordPress
 
 == Changelog ==
