@@ -3,7 +3,7 @@ Contributors: axelseaa
 Tags: expire, posts, pages, schedule
 Requires at least: 3.0
 Tested up to: 3.3.1
-Stable tag: 1.4.3
+Stable tag: 1.5
 
 Allows you to add an expiration date (minute) to posts which you can configure to either delete the post, change it to a draft, or update the 
 post categories at expiration time.
