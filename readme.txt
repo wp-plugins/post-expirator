@@ -5,8 +5,8 @@ Requires at least: 3.0
 Tested up to: 3.3.1
 Stable tag: 1.5
 
-Allows you to add an expiration date (minute) to posts which you can configure to either delete the post, change it to a draft, or update the 
-post categories at expiration time.
+Allows you to add an expiration date to posts which you can configure to either delete the post, change it to a draft, or update the 
+post categories.
 
 == Description ==
 
@@ -40,6 +40,7 @@ This section describes how to install the plugin and get it working.
 == Changelog ==
 
 **Version 1.5**
+
 * Moved Expirator Box to Sidebar and cleaned up meta code
 * Added ability to expire post to category
 
