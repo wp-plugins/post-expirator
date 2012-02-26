@@ -2,9 +2,9 @@
 /*
 Plugin Name: Post Expirator
 Plugin URI: http://wordpress.org/extend/plugins/post-expirator/
-Description: Allows you to add an expiration date to posts which you can configure to either delete the post or change it to a draft.
+Description: Allows you to add an expiration date (minute) to posts which you can configure to either delete the post, change it to a draft, or update the post categories at expiration time.
 Author: Aaron Axelsen
-Version: 1.4.3
+Version: 1.5
 Author URI: http://postexpirator.tuxdocs.net/
 Translation: Thierry (http://palijn.info)
 Text Domain: post-expirator
@@ -62,7 +62,7 @@ function postExpirationAdminNotice() {
 add_action('admin_notices','postExpirationAdminNotice');
 
 /** 
- * Function that does the actualy deleting - called by wp_cron
+ * Function that does the actual deleting - called by wp_cron
  */
 function expirationdate_delete_expired_posts() {
 	global $wpdb;
@@ -70,6 +70,10 @@ function expirationdate_delete_expired_posts() {
 	$time_delete = time();
 	$result = $wpdb->get_results('select post_id, meta_value from ' . $wpdb->postmeta . ' as postmeta, '.$wpdb->posts.' as posts where postmeta.post_id = posts.ID AND posts.post_status = "publish" AND postmeta.meta_key = "expiration-date" AND postmeta.meta_value <= "' . $time_delete . '"');
   	if (!empty($result)) foreach ($result as $a) {
+		// Check to see if already proccessed
+		$processed = $wpdb->get_var('select meta_value from ' . $wpdb->postmeta . ' as postmeta, '.$wpdb->posts.' as posts where postmeta.post_id = posts.ID AND posts.ID = '.$a->post_id.' postmeta.meta_key = "_expiration-date-processed"');
+		if (!empty($processed) && $processed == 1) continue;
+
 		$post_result = $wpdb->get_var('select post_type from ' . $wpdb->posts .' where ID = '. $a->post_id);
 		if ($post_result == 'post') {
 			$expiredStatus = strtolower(get_option('expirationdateExpiredPostStatus'));
@@ -79,13 +83,23 @@ function expirationdate_delete_expired_posts() {
 			$expiredStatus = 'draft';
 		}
 
-		if ($expiredStatus == 'delete')
-			wp_delete_post($a->post_id);
-		else {
-			wp_update_post(array('ID' => $a->post_id, 'post_status' => 'draft'));
-	                delete_post_meta($a->post_id, 'expiration-date');
-        	        update_post_meta($a->post_id, 'expiration-date', $a->meta_value, true);
+		// Check to see if expiration category is enabled and set - otherwise, proceed as normal
+        	$catEnabled = get_option('expirationdateCategory');
+		$cat = get_post_meta($a->post_id,'_expiration-date-category');
+	        if (($catEnabled === false || $catEnabled == 1) && (isset($cat) && !empty($cat[0]))) {
+			wp_update_post(array('ID' => $a->post_id, 'post_category' => $cat[0]));
+		} else {
+			if ($expiredStatus == 'delete')
+				wp_delete_post($a->post_id);
+			else {
+				wp_update_post(array('ID' => $a->post_id, 'post_status' => 'draft'));
+        		        delete_post_meta($a->post_id, 'expiration-date');
+       			        update_post_meta($a->post_id, 'expiration-date', $a->meta_value, true);
+			}
 		}
+
+		// Mark as Processed
+		update_post_meta($a->post_id, '_expiration-date-processed', 1);
 	}
 }
 if (postExpirator_is_wpmu())
@@ -105,6 +119,7 @@ function expirationdate_activate () {
 	update_option('expirationdateFooterContents',$expirationdateDefaultFooterContents);
 	update_option('expirationdateFooterStyle',$expirationdateDefaultFooterStyle);
         update_option('expirationdateDisplayFooter',0);
+	update_option('expirationdateCategory',1);
         postExpiratorTimezoneSetup();
 
 	if (postExpirator_is_wpmu())
@@ -126,6 +141,7 @@ function expirationdate_deactivate () {
         delete_option('expirationdateDisplayFooter');
         delete_option('expirationdateFooterContents');
         delete_option('expirationdateFooterStyle');
+	delete_option('expirationdateCategory');
 	if (postExpirator_is_wpmu())
 		wp_clear_scheduled_hook('expirationdate_delete_'.$current_blog->blog_id);
 	else
@@ -160,23 +176,16 @@ add_action ('manage_posts_custom_column', 'expirationdate_show_value');
 add_action ('manage_pages_custom_column', 'expirationdate_show_value');
 
 /**
- * Adds hooks to get the meta box added to page
- */
-function expirationdate_meta_page() {
-	add_meta_box('expirationdatediv', __('Post Expirator','post-expirator'), 'expirationdate_meta_box', 'page', 'advanced', 'high');
-}
-add_action ('edit_page_form','expirationdate_meta_page');
-
-/**
- * Adds hooks to get the meta box added to custom post types
+ * Adds hooks to get the meta box added to pages and custom post types
  */
 function expirationdate_meta_custom() {
-    $custom_post_types = get_post_types();
-    foreach ($custom_post_types as $t) {
-       	add_meta_box('expirationdatediv', __('Post Expirator','post-expirator'), 'expirationdate_meta_box', $t, 'advanced', 'high');
-    }
+	$custom_post_types = get_post_types();
+	foreach ($custom_post_types as $t) {
+		add_meta_box('expirationdatediv', __('Post Expirator','post-expirator'), 'expirationdate_meta_box', 'post', 'side', 'core');
+	}
+	add_meta_box('expirationdatediv', __('Post Expirator','post-expirator'), 'expirationdate_meta_box', 'page', 'side', 'core');
 }
-add_action ('edit_form_advanced','expirationdate_meta_custom');
+add_action ('add_meta_boxes','expirationdate_meta_custom');
 
 /**
  * Actually adds the meta box
@@ -192,13 +201,14 @@ function expirationdate_meta_box($post) {
 		$defaultyear = date('Y');
 		$defaultminute = date('i');
 		$disabled = 'disabled="disabled"';
+		$categories = get_option('expirationdateCategoryDefaults');
 	} else {
 		$defaultmonth = date('F',$expirationdatets);
 		$defaultday = date('d',$expirationdatets);
 		$defaultyear = date('Y',$expirationdatets);
 		$defaulthour = date('H',$expirationdatets);
 		$defaultminute = date('i',$expirationdatets);
-
+		$categories = get_post_meta($post->ID,'_expiration-date-category',true);
 		$enabled = ' checked="checked"';
 		$disabled = '';
 	}
@@ -212,7 +222,7 @@ function expirationdate_meta_box($post) {
 	   $rv[] = '<th style="text-align: left;">'.__('Day','post-expirator').'</th>';
 	$rv[] = '</tr><tr>';
 	$rv[] = '<td>';	
-		$rv[] = '<select name="expirationdate_year" id="expirationdate_year"'.$disabled.'">';
+		$rv[] = '<select name="expirationdate_year" id="expirationdate_year"'.$disabled.'>';
 		$currentyear = date('Y');
 		if ($defaultyear < $currentyear)
 			$currentyear = $defaultyear;
@@ -225,25 +235,25 @@ function expirationdate_meta_box($post) {
 		}
 		$rv[] = '</select>';
 	$rv[] = '</td><td>';
-		$rv[] = '<select name="expirationdate_month" id="expirationdate_month"'.$disabled.'">';
+		$rv[] = '<select name="expirationdate_month" id="expirationdate_month"'.$disabled.'>';
 		for($i = 1; $i <= 12; $i++) {
 			if ($defaultmonth == date('F',mktime(0, 0, 0, $i, 1, date("Y"))))
 				$selected = ' selected="selected"';
 			else
 				$selected = '';
-			$rv[] = '<option value="'.date('m',mktime(0, 0, 0, $i, 1, date("Y"))).'"'.$selected.'>'.date(__('F','post-expirator'),mktime(0, 0, 0, $i, 1, date("Y"))).'</option>';
+			$rv[] = '<option value="'.date('m',mktime(0, 0, 0, $i, 1, date("Y"))).'"'.$selected.'>'.__(date(__('F','post-expirator'),mktime(0, 0, 0, $i, 1, date("Y"))),'post-expirator').'</option>';
 		}
 	$rv[] = '</select>';	 
 	$rv[] = '</td><td>';
-		$rv[] = '<input type="text" id="expirationdate_day" name="expirationdate_day" value="'.$defaultday.'" size="2"'.$disabled.'" />,';
+		$rv[] = '<input type="text" id="expirationdate_day" name="expirationdate_day" value="'.$defaultday.'" size="2"'.$disabled.' />,';
 	$rv[] = '</td></tr><tr>';
 	   $rv[] = '<th style="text-align: left;"></th>';
 	   $rv[] = '<th style="text-align: left;">'.__('Hour','post-expirator').'('.date('T',mktime(0, 0, 0, $i, 1, date("Y"))).')</th>';
 	   $rv[] = '<th style="text-align: left;">'.__('Minute','post-expirator').'</th>';
    	$rv[] = '</tr><tr>';
 	$rv[] = '<td>@</td><td>';
-	 /* $rv[] = '<input type="text" id="expirationdate_hour" name="expirationdate_hour" value="'.$defaulthour.'" size="2"'.$disabled.'" />'; */
-	 	$rv[] = '<select name="expirationdate_hour" id="expirationdate_hour"'.$disabled.'">';
+	 /* $rv[] = '<input type="text" id="expirationdate_hour" name="expirationdate_hour" value="'.$defaulthour.'" size="2"'.$disabled.' />'; */
+	 	$rv[] = '<select name="expirationdate_hour" id="expirationdate_hour"'.$disabled.'>';
 		for($i = 1; $i <= 24; $i++) {
 			if ($defaulthour == date('H',mktime($i, 0, 0, date("n"), date("j"), date("Y"))))
 				$selected = ' selected="selected"';
@@ -252,13 +262,27 @@ function expirationdate_meta_box($post) {
 			$rv[] = '<option value="'.date('H',mktime($i, 0, 0, date("n"), date("j"), date("Y"))).'"'.$selected.'>'.date(__('H','post-expirator'),mktime($i, 0, 0, date("n"), date("j"), date("Y"))).'</option>';
 		}
 		$rv[] = '</td><td>';
-		$rv[] = '<input type="text" id="expirationdate_minute" name="expirationdate_minute" value="'.$defaultminute.'" size="2"'.$disabled.'" />';
+		$rv[] = '<input type="text" id="expirationdate_minute" name="expirationdate_minute" value="'.$defaultminute.'" size="2"'.$disabled.' />';
 		$rv[] = '<input type="hidden" name="expirationdate_formcheck" value="true" />';
 	$rv[] = '</td></tr></table>';
-
-	$rv[] = '<div id="expirationdate_ajax_result"></div>';
-
 	echo implode("\n",$rv);
+
+	$catEnabled = get_option('expirationdateCategory');
+	if (($post->post_type != 'page') && ($catEnabled === false || $catEnabled == 1)) {
+		$args = array('hide_empty' => 0,'orderby' => 'name','hierarchical' => 0);
+		echo '<br/>'.__('Expiration Categories','post-expirator').':<br/>';
+
+		echo '<div class="wp-tab-panel" id="post-expirator-cat-list">';
+		echo '<ul id="categorychecklist" class="list:category categorychecklist form-no-clear">';
+		$walker = new Walker_PostExpirator_Category_Checklist();
+		if (!empty($disabled)) $walker->setDisabled();
+		wp_terms_checklist(0, array( 'taxonomy' => 'category', 'walker' => $walker, 'selected_cats' => $categories, 'checked_ontop' => false ) );
+		echo '</ul>';
+		echo '</div>';
+
+		echo '<p class="howto">'.__('Setting an expiration category will change the category at expiration time, and override the default post action','post-expirator').'.</p>';
+	}
+	echo '<div id="expirationdate_ajax_result"></div>';
 }
 
 /**
@@ -296,12 +320,22 @@ function expirationdate_ajax_add_meta(expireenable) {
 		document.getElementById('expirationdate_year').disabled = false;
 		document.getElementById('expirationdate_hour').disabled = false;
 		document.getElementById('expirationdate_minute').disabled = false;
+		var cats = document.getElementsByName('expirationdate_category[]');
+		var max = cats.length;
+		for (var i=0; i<max; i++) {
+			cats[i].disabled = '';
+		}
 	} else {
 		document.getElementById('expirationdate_month').disabled = true;
 		document.getElementById('expirationdate_day').disabled = true;
 		document.getElementById('expirationdate_year').disabled = true;
 		document.getElementById('expirationdate_hour').disabled = true;
 		document.getElementById('expirationdate_minute').disabled = true;
+		var cats = document.getElementsByName('expirationdate_category[]');
+		var max = cats.length;
+		for (var i=0; i<max; i++) {
+			cats[i].disabled = 'disable';
+		}
 		var enable = 'false';
 	}
 	
@@ -346,17 +380,26 @@ function expirationdate_update_post_meta($id) {
         $year = $_POST['expirationdate_year'];
         $hour = $_POST['expirationdate_hour'];
         $minute = $_POST['expirationdate_minute'];
-
+	$category = $_POST['expirationdate_category'];
 	if (isset($_POST['enable-expirationdate'])) {
 	        postExpiratorTimezoneSetup();
         	// Format Date
         	$ts = mktime($hour,$minute,0,$month,$day,$year);
 
         	// Update Post Meta
+		delete_post_meta($id, '_expiration-date-category');
 		delete_post_meta($id, 'expiration-date');
 	        update_post_meta($id, 'expiration-date', $ts, true);
+
+        	$catEnabled = get_option('expirationdateCategory');
+	        if ((isset($category) && !empty($category)) && ($catEnabled === false || $catEnabled == 1)) {
+			if (!empty($category)) update_post_meta($id, '_expiration-date-category', $category);
+		}
+		update_post_meta($id, '_expiration-date-processed', 0, true);
 	} else {
 		delete_post_meta($id, 'expiration-date');
+		delete_post_meta($id, '_expiration-date-category');
+		delete_post_meta($id, '_expiration-date-processed');
 	}
 }
 add_action('save_post','expirationdate_update_post_meta');
@@ -410,6 +453,8 @@ function postExpiratorMenuGeneral() {
 		update_option('expirationdateDisplayFooter',$_POST['expired-display-footer']);
 		update_option('expirationdateFooterContents',$_POST['expired-footer-contents']);
 		update_option('expirationdateFooterStyle',$_POST['expired-footer-style']);
+		update_option('expirationdateCategory',$_POST['expired-category']);
+		update_option('expirationdateCategoryDefaults',$_POST['expirationdate_category']);
                 echo "<div id='message' class='updated fade'><p>";
                 _e('Saved Options!','post-expirator');
                 echo "</p></div>";
@@ -436,6 +481,12 @@ function postExpiratorMenuGeneral() {
 		$expirationdateDefaultTimeFormat = $expirationdateDefaultTimeFormat;
 	}
 
+	$categories = get_option('expirationdateCategoryDefaults');
+
+	$expiredcategory = get_option('expirationdateCategory');
+	if (!isset($expiredcategory))
+		$expiredcategory = 1;
+
 	$expireddisplayfooter = get_option('expirationdateDisplayFooter');
 	if (empty($expireddisplayfooter))
 		$expireddisplayfooter = 0;
@@ -447,6 +498,11 @@ function postExpiratorMenuGeneral() {
 	else if ($expireddisplayfooter == 1)
 		$expireddisplayfooterenabled = 'checked="checked"';
 	
+	if ($expiredcategory == 0)
+		$expiredcategorydisabled = 'checked="checked"';
+	else if ($expiredcategory == 1)
+		$expiredcategoryenabled = 'checked="checked"';
+
 	$expirationdateFooterContents = get_option('expirationdateFooterContents');
 	if (empty($expirationdateFooterContents)) {
 		global $expirationdateDefaultFooterContents;
@@ -513,6 +569,34 @@ function postExpiratorMenuGeneral() {
 				</td>
 			</tr>
 		</table>
+		<h3><?php _e('Category Expiration','post-expirator');?></h3>
+		<table class="form-table">
+			<tr valign-"top">
+				<th scope="row"><?php _e('Enable Post Expiration to Category?','post-expirator');?></th>
+				<td>
+					<input type="radio" name="expired-category" id="expired-category-true" value="1" <?php echo $expiredcategoryenabled ?>/> <label for="expired-category-true"><?php _e('Enabled','post-expirator');?></label> 
+					<input type="radio" name="expired-category" id="expired-category-false" value="0" <?php echo $expiredcategorydisabled ?>/> <label for="expired-category-false"><?php _e('Disabled','post-expirator');?></label>
+					<br/>
+					<?php _e('This will enable or disable the ability to expire a post to a category.','post-expirator');?>
+				</td>
+			</tr>
+			<tr valign-"top">
+				<th scope="row"><?php _e('Default Expiration Category','post-expirator');?>:</th>
+				<td>
+		<?php
+                echo '<div class="wp-tab-panel" id="post-expirator-cat-list">';
+                echo '<ul id="categorychecklist" class="list:category categorychecklist form-no-clear">';
+                $walker = new Walker_PostExpirator_Category_Checklist();
+                wp_terms_checklist(0, array( 'taxonomy' => 'category', 'walker' => $walker, 'selected_cats' => $categories, 'checked_ontop' => false ) );
+                echo '</ul>';
+                echo '</div>';
+		?>
+					<br/>
+					<?php _e("Set's the default expiration category for the post.",'post-expirator');?>
+				</td>
+			</tr>
+		</table>
+
 		<h3><?php _e('Post Footer Display','post-expirator');?></h3>
 		<p><?php _e('Enabling this below will display the expiration date automatically at the end of any post which is set to expire.','post-expirator');?></p>
 		<table class="form-table">
@@ -708,3 +792,54 @@ function postexpirator_add_footer($text) {
 	return $text.$add_to_footer;
 }
 add_action('the_content','postexpirator_add_footer',0);
+
+/**
+ * Add Stylesheet
+ */
+function postexpirator_css() {
+        $myStyleUrl = plugins_url('style.css', __FILE__); // Respects SSL, Style.css is relative to the current file
+        $myStyleFile = WP_PLUGIN_DIR . '/post-expirator/style.css';
+        if ( file_exists($myStyleFile) ) {
+            wp_register_style('postexpirator-css', $myStyleUrl);
+            wp_enqueue_style('postexpirator-css');
+        }
+
+}
+add_action('admin_init','postexpirator_css');
+
+class Walker_PostExpirator_Category_Checklist extends Walker {
+        var $tree_type = 'category';
+        var $db_fields = array ('parent' => 'parent', 'id' => 'term_id'); //TODO: decouple this
+
+	var $disabled = '';
+
+	function setDisabled() {
+		$this->disabled = 'disabled="disabled"';
+	}
+
+        function start_lvl(&$output, $depth, $args) {
+                $indent = str_repeat("\t", $depth);
+                $output .= "$indent<ul class='children'>\n";
+        }
+
+        function end_lvl(&$output, $depth, $args) {
+                $indent = str_repeat("\t", $depth);
+                $output .= "$indent</ul>\n";
+        }
+
+        function start_el(&$output, $category, $depth, $args) {
+                extract($args);
+                if ( empty($taxonomy) )
+                        $taxonomy = 'category';
+
+		$name = 'expirationdate_category';
+
+                $class = in_array( $category->term_id, $popular_cats ) ? ' class="popular-category"' : '';
+                $output .= "\n<li id='{$taxonomy}-{$category->term_id}'$class>" . '<label class="selectit"><input value="' . $category->term_id . '" type="checkbox" name="'.$name.'[]" id="in-'.$taxonomy.'-' . $category->term_id . '"' . checked( in_array( $category->term_id, $selected_cats ), true, false ) . disabled( empty( $args['disabled'] ), false, false ) . ' '.$this->disabled.'/> ' . esc_html( apply_filters('the_category', $category->name )) . '</label>';
+        }
+
+        function end_el(&$output, $category, $depth, $args) {
+                $output .= "</li>\n";
+        }
+}
+

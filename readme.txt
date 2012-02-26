@@ -1,18 +1,19 @@
 === Post Expirator ===
 Contributors: axelseaa
 Tags: expire, posts, pages, schedule
-Requires at least: 2.9
-Tested up to: 3.1
+Requires at least: 3.0
+Tested up to: 3.3.1
 Stable tag: 1.4.3
 
-Allows you to add an expiration date (minute) to posts which you can configure to either delete the post or change it to a draft.
+Allows you to add an expiration date (minute) to posts which you can configure to either delete the post, change it to a draft, or update the 
+post categories at expiration time.
 
 == Description ==
 
 The Post Expirator plugin allows the user to set expiration dates for both posts and pages.  There is a configuration option page in the plugins 
 area that will allow you to seperataly control whether or not posts/pages are wither deleted or changed to draft status.
 
-The plugin hooks into the wp cron processes and runs every hour.
+The plugin hooks into the wp cron processes and runs every minute.
 
 The expiration date can be displayed within the actual post by using the [postexpirator] tag.  The format attribute will override the plugin 
 default display format.  See the [PHP Date Function](http://us2.php.net/manual/en/function.date.php) for valid date/time format options. 
@@ -27,7 +28,7 @@ Plugin homepage [WordPress Post Expirator](http://postexpirator.tuxdocs.net).
 
 == Wordpress MU ==
 
-This plugin is compataibile with Wordpress MU 1.5+, however currently it will not work in the mu-plugins folder due to the plugin activation 
+This plugin is compatible with Wordpress 3.0+, however currently it will not work in the mu-plugins folder due to the plugin activation 
 functions.
 
 == Credits ==
@@ -42,6 +43,11 @@ This section describes how to install the plugin and get it working.
 2. Activate the plugin through the 'Plugins' menu in WordPress
 
 == Changelog ==
+
+**Version 1.5**
+* Moved Expirator Box to Sidebar and cleaned up meta code
+* Added ability to expire post to category
+* Months should now be translatable
 
 **Version 1.4.3**
 
