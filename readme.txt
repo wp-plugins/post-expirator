@@ -47,7 +47,6 @@ This section describes how to install the plugin and get it working.
 **Version 1.5**
 * Moved Expirator Box to Sidebar and cleaned up meta code
 * Added ability to expire post to category
-* Months should now be translatable
 
 **Version 1.4.3**
 
