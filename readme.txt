@@ -28,7 +28,7 @@ Plugin homepage [WordPress Post Expirator](http://postexpirator.tuxdocs.net).
 * dateformat - format set here will override the value set on the settings page
 * timeformat - format set here will override the value set on the settings page 
 
-This plugin is fully compatbily with WordPress Multisite Mode.
+This plugin is fully compatible with WordPress Multisite Mode.
 
 == Installation ==
 
