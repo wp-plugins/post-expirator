@@ -39,7 +39,7 @@ This section describes how to install the plugin and get it working.
 
 == Changelog ==
 
-**Version 1.5.1 **
+**Version 1.5.1**
 
 * Fixed bug that was not allow custom post types to work
 
