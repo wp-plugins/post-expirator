@@ -3,7 +3,7 @@ Contributors: axelseaa
 Tags: expire, posts, pages, schedule
 Requires at least: 3.0
 Tested up to: 3.3.1
-Stable tag: 1.5
+Stable tag: 1.5.1
 
 Allows you to add an expiration date to posts which you can configure to either delete the post, change it to a draft, or update the 
 post categories.
@@ -38,6 +38,10 @@ This section describes how to install the plugin and get it working.
 2. Activate the plugin through the 'Plugins' menu in WordPress
 
 == Changelog ==
+
+**Version 1.5.1 **
+
+* Fixed bug that was not allow custom post types to work
 
 **Version 1.5**
 
