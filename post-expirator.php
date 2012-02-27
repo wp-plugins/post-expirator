@@ -181,7 +181,7 @@ add_action ('manage_pages_custom_column', 'expirationdate_show_value');
 function expirationdate_meta_custom() {
 	$custom_post_types = get_post_types();
 	foreach ($custom_post_types as $t) {
-		add_meta_box('expirationdatediv', __('Post Expirator','post-expirator'), 'expirationdate_meta_box', 'post', 'side', 'core');
+		add_meta_box('expirationdatediv', __('Post Expirator','post-expirator'), 'expirationdate_meta_box', $t, 'side', 'core');
 	}
 	add_meta_box('expirationdatediv', __('Post Expirator','post-expirator'), 'expirationdate_meta_box', 'page', 'side', 'core');
 }
