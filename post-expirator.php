@@ -520,7 +520,7 @@ function postExpiratorMenuGeneral() {
 	<?php _e('The post expirator plugin sets a custom meta value, and then optionally allows you to select if you want the post changed to a draft status or deleted when it expires.','post-expirator'); ?>
 	</p>
 	<p>
-	<?php _e('Valid [postexpiration] attributes:','post-expirator'); ?>
+	<?php _e('Valid [postexpirator] attributes:','post-expirator'); ?>
 	<ul>
 		<li><?php _e('type - defaults to full - valid options are full,date,time','post-expirator');?></li>
 		<li><?php _e('dateformat - format set here will override the value set on the settings page','post-expirator');?></li>

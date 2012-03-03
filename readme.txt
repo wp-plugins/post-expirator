@@ -42,6 +42,7 @@ This section describes how to install the plugin and get it working.
 **Version 1.5.2**
 
 * Fixed bug with shortcode that was displaying the expiration date in the incorrect timezone
+* Fixed typo on settings page with incorrect shortcode name
 
 **Version 1.5.1**
 
