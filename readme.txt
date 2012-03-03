@@ -39,6 +39,10 @@ This section describes how to install the plugin and get it working.
 
 == Changelog ==
 
+**Version 1.5.2**
+
+* Fixed bug with shortcode that was displaying the expiration date in the incorrect timezone
+
 **Version 1.5.1**
 
 * Fixed bug that was not allow custom post types to work
@@ -101,3 +105,8 @@ NOTE: After upgrading, you may need to reset the cron schedules.  Following onsc
 **Version 1.0**
 
 * Initial Release
+
+== Upgrade Notice ==
+
+= 1.5.2 =
+Fixed shortcode timezone issue
