@@ -39,6 +39,10 @@ This section describes how to install the plugin and get it working.
 
 == Changelog ==
 
+**Version 1.5.3**
+
+* Fixed bug with sql expiration query (props to Robert & John)
+
 **Version 1.5.2**
 
 * Fixed bug with shortcode that was displaying the expiration date in the incorrect timezone
@@ -108,6 +112,9 @@ NOTE: After upgrading, you may need to reset the cron schedules.  Following onsc
 * Initial Release
 
 == Upgrade Notice ==
+
+= 1.5.3 =
+Fixed bug with sql expiration query (props to Robert & John)
 
 = 1.5.2 =
 Fixed shortcode timezone issue

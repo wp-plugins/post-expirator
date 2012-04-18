@@ -4,7 +4,7 @@ Plugin Name: Post Expirator
 Plugin URI: http://wordpress.org/extend/plugins/post-expirator/
 Description: Allows you to add an expiration date (minute) to posts which you can configure to either delete the post, change it to a draft, or update the post categories at expiration time.
 Author: Aaron Axelsen
-Version: 1.5.2
+Version: 1.5.3
 Author URI: http://postexpirator.tuxdocs.net/
 Translation: Thierry (http://palijn.info)
 Text Domain: post-expirator
@@ -71,7 +71,7 @@ function expirationdate_delete_expired_posts() {
 	$result = $wpdb->get_results('select post_id, meta_value from ' . $wpdb->postmeta . ' as postmeta, '.$wpdb->posts.' as posts where postmeta.post_id = posts.ID AND posts.post_status = "publish" AND postmeta.meta_key = "expiration-date" AND postmeta.meta_value <= "' . $time_delete . '"');
   	if (!empty($result)) foreach ($result as $a) {
 		// Check to see if already proccessed
-		$processed = $wpdb->get_var('select meta_value from ' . $wpdb->postmeta . ' as postmeta, '.$wpdb->posts.' as posts where postmeta.post_id = posts.ID AND posts.ID = '.$a->post_id.' postmeta.meta_key = "_expiration-date-processed"');
+		$processed = $wpdb->get_var('select meta_value from ' . $wpdb->postmeta . ' as postmeta, '.$wpdb->posts.' as posts where postmeta.post_id = posts.ID AND posts.ID = '.$a->post_id.' AND postmeta.meta_key = "_expiration-date-processed"');
 		if (!empty($processed) && $processed == 1) continue;
 
 		$post_result = $wpdb->get_var('select post_type from ' . $wpdb->posts .' where ID = '. $a->post_id);
@@ -94,7 +94,7 @@ function expirationdate_delete_expired_posts() {
 			else {
 				wp_update_post(array('ID' => $a->post_id, 'post_status' => 'draft'));
         		        delete_post_meta($a->post_id, 'expiration-date');
-       			        update_post_meta($a->post_id, 'expiration-date', $a->meta_value, true);
+       			        update_post_meta($a->post_id, 'expiration-date', $a->meta_value);
 			}
 		}
 
@@ -389,13 +389,13 @@ function expirationdate_update_post_meta($id) {
         	// Update Post Meta
 		delete_post_meta($id, '_expiration-date-category');
 		delete_post_meta($id, 'expiration-date');
-	        update_post_meta($id, 'expiration-date', $ts, true);
+	        update_post_meta($id, 'expiration-date', $ts);
 
         	$catEnabled = get_option('expirationdateCategory');
 	        if ((isset($category) && !empty($category)) && ($catEnabled === false || $catEnabled == 1)) {
 			if (!empty($category)) update_post_meta($id, '_expiration-date-category', $category);
 		}
-		update_post_meta($id, '_expiration-date-processed', 0, true);
+		update_post_meta($id, '_expiration-date-processed', 0);
 	} else {
 		delete_post_meta($id, 'expiration-date');
 		delete_post_meta($id, '_expiration-date-category');
