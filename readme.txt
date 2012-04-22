@@ -37,6 +37,12 @@ This section describes how to install the plugin and get it working.
 1. Unzip the plugin contents to the `/wp-content/plugins/post-expirator/` directory
 2. Activate the plugin through the 'Plugins' menu in WordPress
 
+== Screenshots ==
+
+1. screenshot-add-expiration.png
+2. screenshot-post-overview.png
+3. screenshot-settings.png
+
 == Changelog ==
 
 **Version 1.5.3**
