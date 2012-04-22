@@ -39,9 +39,9 @@ This section describes how to install the plugin and get it working.
 
 == Screenshots ==
 
-1. screenshot-add-expiration.png
-2. screenshot-post-overview.png
-3. screenshot-settings.png
+1. Adding expiration date to a post
+2. Viewing the exipiration dates on the post overview screen
+3. Settings screen
 
 == Changelog ==
 
