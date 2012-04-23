@@ -2,9 +2,9 @@
 # This file is distributed under the same license as the Post Expirator package.
 msgid ""
 msgstr ""
-"Project-Id-Version: Post Expirator 1.5.2\n"
+"Project-Id-Version: Post Expirator 1.5.3\n"
 "Report-Msgid-Bugs-To: http://wordpress.org/tag/post-expirator\n"
-"POT-Creation-Date: 2012-03-03 23:17:36+00:00\n"
+"POT-Creation-Date: 2012-04-23 00:12:47+00:00\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -44,7 +44,7 @@ msgstr ""
 msgid "Never"
 msgstr ""
 
-#. #-#-#-#-#  plugin.pot (Post Expirator 1.5.2)  #-#-#-#-#
+#. #-#-#-#-#  plugin.pot (Post Expirator 1.5.3)  #-#-#-#-#
 #. Plugin Name of the plugin/theme
 #: post-expirator.php:184 post-expirator.php:186 post-expirator.php:439
 msgid "Post Expirator"
