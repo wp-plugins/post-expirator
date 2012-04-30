@@ -359,13 +359,10 @@ add_action('admin_print_scripts', 'expirationdate_js_admin_header' );
  * Get correct URL (HTTP or HTTPS)
  */
 function expirationdate_get_blog_url() {
-	global $current_blog;
-	$schema = ( isset($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) == 'on' ) ? 'https://' : 'http://';
-	
 	if (postExpirator_is_wpmu())	
-        	echo $schema.$current_blog->domain.$current_blog->path;
+		echo network_home_url('/');
 	else
-        	echo get_bloginfo('siteurl').'/';
+        	echo home_url('/');
 }
 
 /**
@@ -436,7 +433,7 @@ function postExpiratorMenu() {
  * Hook's to add plugin page menu
  */
 function postExpiratorPluginMenu() {
-	add_submenu_page('options-general.php',__('Post Expirator Options','post-expirator'),__('Post Expirator','post-expirator'),9,basename(__FILE__),'postExpiratorMenu');
+	add_submenu_page('options-general.php',__('Post Expirator Options','post-expirator'),__('Post Expirator','post-expirator'),'edit_plugins',basename(__FILE__),'postExpiratorMenu');
 }
 add_action('admin_menu', 'postExpiratorPluginMenu');
 

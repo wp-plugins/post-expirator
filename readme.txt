@@ -45,6 +45,10 @@ This section describes how to install the plugin and get it working.
 
 == Changelog ==
 
+**Version 1.5.4**
+
+* Cleaned up deprecated function calls
+
 **Version 1.5.3**
 
 * Fixed bug with sql expiration query (props to Robert & John)
