@@ -2,8 +2,8 @@
 Contributors: axelseaa
 Tags: expire, posts, pages, schedule
 Requires at least: 3.0
-Tested up to: 3.3.1
-Stable tag: 1.5.3
+Tested up to: 3.3.2
+Stable tag: 1.5.4
 
 Allows you to add an expiration date to posts which you can configure to either delete the post, change it to a draft, or update the 
 post categories.
@@ -122,6 +122,9 @@ NOTE: After upgrading, you may need to reset the cron schedules.  Following onsc
 * Initial Release
 
 == Upgrade Notice ==
+
+= 1.5.4 =
+Cleaned up deprecated function calls
 
 = 1.5.3 =
 Fixed bug with sql expiration query (props to Robert & John)
