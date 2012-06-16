@@ -200,7 +200,7 @@ function expirationdate_meta_box($post) {
 		$defaulthour = date('H');
 		$defaultyear = date('Y');
 		$defaultminute = date('i');
-		$disabled = 'disabled="disabled"';
+		$disabled = ' disabled="disabled"';
 		$categories = get_option('expirationdateCategoryDefaults');
 	} else {
 		$defaultmonth = date('F',$expirationdatets);
@@ -217,53 +217,57 @@ function expirationdate_meta_box($post) {
 	$rv[] = '<p><input type="checkbox" name="enable-expirationdate" id="enable-expirationdate" value="checked"'.$enabled.' onclick="expirationdate_ajax_add_meta(\'enable-expirationdate\')" />';
 	$rv[] = '<label for="enable-expirationdate">'.__('Enable Post Expiration','post-expirator').'</label></p>';
 	$rv[] = '<table><tr>';
-	   $rv[] = '<th style="text-align: left;">'.__('Year','post-expirator').'</th>';
-	   $rv[] = '<th style="text-align: left;">'.__('Month','post-expirator').'</th>';
-	   $rv[] = '<th style="text-align: left;">'.__('Day','post-expirator').'</th>';
+	$rv[] = '<th style="text-align: left;">'.__('Year','post-expirator').'</th>';
+	$rv[] = '<th style="text-align: left;">'.__('Month','post-expirator').'</th>';
+	$rv[] = '<th style="text-align: left;">'.__('Day','post-expirator').'</th>';
 	$rv[] = '</tr><tr>';
 	$rv[] = '<td>';	
-		$rv[] = '<select name="expirationdate_year" id="expirationdate_year"'.$disabled.'>';
-		$currentyear = date('Y');
-		if ($defaultyear < $currentyear)
-			$currentyear = $defaultyear;
-		for($i = $currentyear; $i < $currentyear + 8; $i++) {
-			if ($i == $defaultyear)
-				$selected = ' selected="selected"';
-			else
-				$selected = '';
-			$rv[] = '<option'.$selected.'>'.($i).'</option>';
-		}
-		$rv[] = '</select>';
+	$rv[] = '<select name="expirationdate_year" id="expirationdate_year"'.$disabled.'>';
+	$currentyear = date('Y');
+
+	if ($defaultyear < $currentyear) $currentyear = $defaultyear;
+
+	for($i = $currentyear; $i < $currentyear + 8; $i++) {
+		if ($i == $defaultyear)
+			$selected = ' selected="selected"';
+		else
+			$selected = '';
+		$rv[] = '<option'.$selected.'>'.($i).'</option>';
+	}
+	$rv[] = '</select>';
 	$rv[] = '</td><td>';
-		$rv[] = '<select name="expirationdate_month" id="expirationdate_month"'.$disabled.'>';
-		for($i = 1; $i <= 12; $i++) {
-			if ($defaultmonth == date('F',mktime(0, 0, 0, $i, 1, date("Y"))))
-				$selected = ' selected="selected"';
-			else
-				$selected = '';
-			$rv[] = '<option value="'.date('m',mktime(0, 0, 0, $i, 1, date("Y"))).'"'.$selected.'>'.__(date(__('F','post-expirator'),mktime(0, 0, 0, $i, 1, date("Y"))),'post-expirator').'</option>';
-		}
+	$rv[] = '<select name="expirationdate_month" id="expirationdate_month"'.$disabled.'>';
+
+	for($i = 1; $i <= 12; $i++) {
+		if ($defaultmonth == date('F',mktime(0, 0, 0, $i, 1, date("Y"))))
+			$selected = ' selected="selected"';
+		else
+			$selected = '';
+		$rv[] = '<option value="'.date('m',mktime(0, 0, 0, $i, 1, date("Y"))).'"'.$selected.'>'.__(date(__('F','post-expirator'),mktime(0, 0, 0, $i, 1, date("Y"))),'post-expirator').'</option>';
+	}
+
 	$rv[] = '</select>';	 
 	$rv[] = '</td><td>';
-		$rv[] = '<input type="text" id="expirationdate_day" name="expirationdate_day" value="'.$defaultday.'" size="2"'.$disabled.' />,';
+	$rv[] = '<input type="text" id="expirationdate_day" name="expirationdate_day" value="'.$defaultday.'" size="2"'.$disabled.' />,';
 	$rv[] = '</td></tr><tr>';
-	   $rv[] = '<th style="text-align: left;"></th>';
-	   $rv[] = '<th style="text-align: left;">'.__('Hour','post-expirator').'('.date('T',mktime(0, 0, 0, $i, 1, date("Y"))).')</th>';
-	   $rv[] = '<th style="text-align: left;">'.__('Minute','post-expirator').'</th>';
-   	$rv[] = '</tr><tr>';
+	$rv[] = '<th style="text-align: left;"></th>';
+	$rv[] = '<th style="text-align: left;">'.__('Hour','post-expirator').'('.date('T',mktime(0, 0, 0, $i, 1, date("Y"))).')</th>';
+	$rv[] = '<th style="text-align: left;">'.__('Minute','post-expirator').'</th>';
+	$rv[] = '</tr><tr>';
 	$rv[] = '<td>@</td><td>';
-	 /* $rv[] = '<input type="text" id="expirationdate_hour" name="expirationdate_hour" value="'.$defaulthour.'" size="2"'.$disabled.' />'; */
-	 	$rv[] = '<select name="expirationdate_hour" id="expirationdate_hour"'.$disabled.'>';
-		for($i = 1; $i <= 24; $i++) {
-			if ($defaulthour == date('H',mktime($i, 0, 0, date("n"), date("j"), date("Y"))))
-				$selected = ' selected="selected"';
-			else
-				$selected = '';
-			$rv[] = '<option value="'.date('H',mktime($i, 0, 0, date("n"), date("j"), date("Y"))).'"'.$selected.'>'.date(__('H','post-expirator'),mktime($i, 0, 0, date("n"), date("j"), date("Y"))).'</option>';
-		}
-		$rv[] = '</td><td>';
-		$rv[] = '<input type="text" id="expirationdate_minute" name="expirationdate_minute" value="'.$defaultminute.'" size="2"'.$disabled.' />';
-		$rv[] = '<input type="hidden" name="expirationdate_formcheck" value="true" />';
+ 	$rv[] = '<select name="expirationdate_hour" id="expirationdate_hour"'.$disabled.'>';
+
+	for($i = 1; $i <= 24; $i++) {
+		if ($defaulthour == date('H',mktime($i, 0, 0, date("n"), date("j"), date("Y"))))
+			$selected = ' selected="selected"';
+		else
+			$selected = '';
+		$rv[] = '<option value="'.date('H',mktime($i, 0, 0, date("n"), date("j"), date("Y"))).'"'.$selected.'>'.date(__('H','post-expirator'),mktime($i, 0, 0, date("n"), date("j"), date("Y"))).'</option>';
+	}
+
+	$rv[] = '</select></td><td>';
+	$rv[] = '<input type="text" id="expirationdate_minute" name="expirationdate_minute" value="'.$defaultminute.'" size="2"'.$disabled.' />';
+	$rv[] = '<input type="hidden" name="expirationdate_formcheck" value="true" />';
 	$rv[] = '</td></tr></table>';
 	echo implode("\n",$rv);
 
