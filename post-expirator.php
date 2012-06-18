@@ -269,31 +269,14 @@ function expirationdate_meta_box($post) {
 }
 
 /**
- * PHP Code to be executed by ajax function call - currently nothing happens
- */
-function expirationdate_ajax_process() {
-	// Gather Values
-	$enable = $_POST['enable'];
-	
-	die(0);
-}
-add_action ('wp_ajax_expirationdate_ajax','expirationdate_ajax_process');
-
-
-/**
  * Add's ajax javascript
  */
 function expirationdate_js_admin_header() {
-	// use JavaScript SACK library for Ajax
-	wp_print_scripts( array( 'sack' ));
-
 	// Define custom JavaScript function
 	?>
 <script type="text/javascript">
 //<![CDATA[
 function expirationdate_ajax_add_meta(expireenable) {
-	var mysack = new sack("<?php expirationdate_get_blog_url(); ?>wp-admin/admin-ajax.php");
-
 	var expire = document.getElementById(expireenable);
 
 	if (expire.checked == true) {
@@ -322,21 +305,13 @@ function expirationdate_ajax_add_meta(expireenable) {
 		var enable = 'false';
 	}
 	
-	mysack.execute = 1;
-	mysack.method = 'POST';
-	mysack.setVar( "action", "expirationdate_ajax" );
-	mysack.setVar( "enable", enable );
-	mysack.encVar( "cookie", document.cookie, false );
-	mysack.onError = function() { alert('Ajax error in enabling post expiration' )};
-	mysack.runAJAX();
-
 	return true;
 }
 //]]>
 </script>
 <?php
 }
-add_action('admin_print_scripts', 'expirationdate_js_admin_header' );
+add_action('admin_head', 'expirationdate_js_admin_header' );
 
 /**
  * Get correct URL (HTTP or HTTPS)

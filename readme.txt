@@ -1,7 +1,7 @@
 === Post Expirator ===
 Contributors: axelseaa
 Tags: expire, posts, pages, schedule
-Requires at least: 3.0
+Requires at least: 3.2
 Tested up to: 3.3.2
 Stable tag: 1.5.4
 
