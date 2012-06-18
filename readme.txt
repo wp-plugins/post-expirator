@@ -45,12 +45,13 @@ This section describes how to install the plugin and get it working.
 
 == Changelog ==
 
-**Version 1.5.5**
+**Version 1.6**
 
 * Fixed invalid html
 * Fixed i18n issues with dates
+* Fixed problem when using "Network Activate" - reworked plugin activation process
 * Replaced "Upgrade" tab with new "Diagnostics" tab
-* Added a debugging option
+* Added debugging
 
 **Version 1.5.4**
 
@@ -130,7 +131,7 @@ NOTE: After upgrading, you may need to reset the cron schedules.  Following onsc
 
 == Upgrade Notice ==
 
-= 1.5.5 =
+= 1.6 =
 Fixed invalid html
 Fixed i18n issues with dates
 Replaced "Upgrade" tab with new "Diagnostics" tab

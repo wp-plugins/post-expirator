@@ -4,11 +4,13 @@ Plugin Name: Post Expirator
 Plugin URI: http://wordpress.org/extend/plugins/post-expirator/
 Description: Allows you to add an expiration date (minute) to posts which you can configure to either delete the post, change it to a draft, or update the post categories at expiration time.
 Author: Aaron Axelsen
-Version: 1.5.5
+Version: 1.6
 Author URI: http://postexpirator.tuxdocs.net/
 Translation: Thierry (http://palijn.info)
 Text Domain: post-expirator
 */
+
+define('POSTEXPIRATOR_VERSION','1.6');
 
 /* Load translation, if it exists */
 $plugin_dir = basename(dirname(__FILE__));
@@ -123,53 +125,6 @@ if (postExpirator_is_wpmu())
 	add_action ('expirationdate_delete_'.$current_blog->blog_id, 'expirationdate_delete_expired_posts');
 else
 	add_action ('expirationdate_delete', 'expirationdate_delete_expired_posts');
-
-/** 
- * Called at plugin activation
- */
-function expirationdate_activate () {
-	global $current_blog,$expirationdateDefaultDateFormat,$expirationdateDefaultTimeFormat,$expirationdateDefaultFooterContents,$expirationdateDefaultFooterStyle;
-	update_option('expirationdateExpiredPostStatus','Draft');
-	update_option('expirationdateExpiredPageStatus','Draft');
-	update_option('expirationdateDefaultDateFormat',$expirationdateDefaultDateFormat);
-	update_option('expirationdateDefaultTimeFormat',$expirationdateDefaultTimeFormat);
-	update_option('expirationdateFooterContents',$expirationdateDefaultFooterContents);
-	update_option('expirationdateFooterStyle',$expirationdateDefaultFooterStyle);
-        update_option('expirationdateDisplayFooter',0);
-	update_option('expirationdateCategory',1);
-	update_option('expirationdateDebug',0);
-        postExpiratorTimezoneSetup();
-
-	if (postExpirator_is_wpmu())
-		wp_schedule_event(mktime(date('H'),0,0,date('m'),date('d'),date('Y')), 'postexpiratorminute', 'expirationdate_delete_'.$current_blog->blog_id);
-	else
-		wp_schedule_event(mktime(date('H'),0,0,date('m'),date('d'),date('Y')), 'postexpiratorminute', 'expirationdate_delete');
-}
-register_activation_hook (__FILE__, 'expirationdate_activate');
-
-/**
- * Called at plugin deactivation
- */
-function expirationdate_deactivate () {
-	global $current_blog;
-	delete_option('expirationdateExpiredPostStatus');
-	delete_option('expirationdateExpiredPageStatus');
-	delete_option('expirationdateDefaultDateFormat');
-	delete_option('expirationdateDefaultTimeFormat');
-        delete_option('expirationdateDisplayFooter');
-        delete_option('expirationdateFooterContents');
-        delete_option('expirationdateFooterStyle');
-	delete_option('expirationdateCategory');
-	delete_option('expirationdateDebug');
-	if (postExpirator_is_wpmu())
-		wp_clear_scheduled_hook('expirationdate_delete_'.$current_blog->blog_id);
-	else
-		wp_clear_scheduled_hook('expirationdate_delete');
-	require_once(plugin_dir_path(__FILE__).'post-expirator-debug.php');
-	$debug = new postExpiratorDebug();
-	$debug->removeDbTable();
-}
-register_deactivation_hook (__FILE__, 'expirationdate_deactivate');
 
 /**
  * adds an 'Expires' column to the post display table.
@@ -945,6 +900,66 @@ function postexpirator_css() {
 
 }
 add_action('admin_init','postexpirator_css');
+
+/**
+ * Post Expirator Activation/Upgrade
+ */
+function postexpirator_upgrade() {
+	// Check for current version, if not exists, run activation
+	$version = get_option('postexpiratorVersion');
+	if ($version === false) { //not installed, run default activation
+		postexpirator_activate();
+		update_option('postexpiratorVersion',POSTEXPIRATOR_VERSION);
+	}
+}
+add_action('admin_init','postexpirator_upgrade');
+
+/** 
+ * Called at plugin activation
+ */
+function postexpirator_activate () {
+	global $current_blog,$expirationdateDefaultDateFormat,$expirationdateDefaultTimeFormat,$expirationdateDefaultFooterContents,$expirationdateDefaultFooterStyle;
+	if (get_option('expirationdateExpiredPostStatus') === false) 	update_option('expirationdateExpiredPostStatus','Draft');
+	if (get_option('expirationdateExpiredPageStatus') === false)	update_option('expirationdateExpiredPageStatus','Draft');
+	if (get_option('expirationdateDefaultDateFormat') === false)	update_option('expirationdateDefaultDateFormat',$expirationdateDefaultDateFormat);
+	if (get_option('expirationdateDefaultTimeFormat') === false)	update_option('expirationdateDefaultTimeFormat',$expirationdateDefaultTimeFormat);
+	if (get_option('expirationdateFooterContents') === false)	update_option('expirationdateFooterContents',$expirationdateDefaultFooterContents);
+	if (get_option('expirationdateFooterStyle') === false)		update_option('expirationdateFooterStyle',$expirationdateDefaultFooterStyle);
+	if (get_option('expirationdateDisplayFooter') === false)	update_option('expirationdateDisplayFooter',0);
+	if (get_option('expirationdateCategory') === false)		update_option('expirationdateCategory',1);
+	if (get_option('expirationdateDebug') === false)		update_option('expirationdateDebug',0);
+	postExpiratorTimezoneSetup();
+
+	if (postExpirator_is_wpmu())
+		wp_schedule_event(mktime(date('H'),0,0,date('m'),date('d'),date('Y')), 'postexpiratorminute', 'expirationdate_delete_'.$current_blog->blog_id);
+	else
+		wp_schedule_event(mktime(date('H'),0,0,date('m'),date('d'),date('Y')), 'postexpiratorminute', 'expirationdate_delete');
+}
+
+/**
+ * Called at plugin deactivation
+ */
+function expirationdate_deactivate () {
+	global $current_blog;
+	delete_option('expirationdateExpiredPostStatus');
+	delete_option('expirationdateExpiredPageStatus');
+	delete_option('expirationdateDefaultDateFormat');
+	delete_option('expirationdateDefaultTimeFormat');
+	delete_option('expirationdateDisplayFooter');
+	delete_option('expirationdateFooterContents');
+	delete_option('expirationdateFooterStyle');
+	delete_option('expirationdateCategory');
+	delete_option('expirationdateDebug');
+	delete_option('postexpiratorVersion');
+	if (postExpirator_is_wpmu())
+		wp_clear_scheduled_hook('expirationdate_delete_'.$current_blog->blog_id);
+	else
+		wp_clear_scheduled_hook('expirationdate_delete');
+	require_once(plugin_dir_path(__FILE__).'post-expirator-debug.php');
+	$debug = new postExpiratorDebug();
+	$debug->removeDbTable();
+}
+register_deactivation_hook (__FILE__, 'expirationdate_deactivate');
 
 class Walker_PostExpirator_Category_Checklist extends Walker {
         var $tree_type = 'category';
