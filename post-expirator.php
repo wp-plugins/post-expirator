@@ -49,7 +49,7 @@ add_filter('cron_schedules','postExpiratorAddCronMinutes');
  */
 function postExpirationAdminNotice() {
 	if (postExpiratorCronEventStatus() === false) {
-		echo '<div class="error fade" style="background-color:red;"><p><strong>';
+		echo '<div class="error fade post-expirator-adminnotice"><p><strong>';
 		_e('Post Expirator cron events need to be reset. ','post-expirator');
 		echo('<a href="'.admin_url('options-general.php?page=post-expirator.php&tab=diagnostics').'" style="color: blue;">');
 		_e('Click here to reset','post-expirator');
@@ -175,7 +175,7 @@ register_deactivation_hook (__FILE__, 'expirationdate_deactivate');
  * adds an 'Expires' column to the post display table.
  */
 function expirationdate_add_column ($columns) {
-  	$columns['expirationdate'] = __('Expires','post-expirator').'<br/><span style="font-size: 0.8em; font-weight: normal;">(YYYY/MM/DD HH:MM)</span>';
+  	$columns['expirationdate'] = __('Expires','post-expirator').'<br/><span class="post-expirator-addcolumn">(YYYY/MM/DD HH:MM)</span>';
   	return $columns;
 }
 add_filter ('manage_posts_columns', 'expirationdate_add_column');
@@ -265,7 +265,7 @@ function expirationdate_meta_box($post) {
 			$selected = ' selected="selected"';
 		else
 			$selected = '';
-		$rv[] = '<option value="'.date('m',mktime(0, 0, 0, $i, 1, date("Y"))).'"'.$selected.'>'.__(date(__('F','post-expirator'),mktime(0, 0, 0, $i, 1, date("Y"))),'post-expirator').'</option>';
+		$rv[] = '<option value="'.date('m',mktime(0, 0, 0, $i, 1, date("Y"))).'"'.$selected.'>'.date_i18n('F',mktime(0, 0, 0, $i, 1, date("Y"))).'</option>';
 	}
 
 	$rv[] = '</select>';	 
@@ -284,7 +284,7 @@ function expirationdate_meta_box($post) {
 			$selected = ' selected="selected"';
 		else
 			$selected = '';
-		$rv[] = '<option value="'.date('H',mktime($i, 0, 0, date("n"), date("j"), date("Y"))).'"'.$selected.'>'.date(__('H','post-expirator'),mktime($i, 0, 0, date("n"), date("j"), date("Y"))).'</option>';
+		$rv[] = '<option value="'.date('H',mktime($i, 0, 0, date("n"), date("j"), date("Y"))).'"'.$selected.'>'.date_i18n('H',mktime($i, 0, 0, date("n"), date("j"), date("Y"))).'</option>';
 	}
 
 	$rv[] = '</select></td><td>';
@@ -582,7 +582,7 @@ function postExpiratorMenuGeneral() {
 			<tr valign-"top">
 				<th scope="row"><label for="expired-default-date-format"><?php _e('Date Format:','post-expirator');?></label></th>
 				<td>
-					<input type="text" name="expired-default-date-format" id="expired-default-date-format" value="<?php echo $expirationdateDefaultDateFormat ?>" size="25" /> (<?php echo date("$expirationdateDefaultDateFormat") ?>)
+					<input type="text" name="expired-default-date-format" id="expired-default-date-format" value="<?php echo $expirationdateDefaultDateFormat ?>" size="25" /> (<?php echo date_i18n("$expirationdateDefaultDateFormat") ?>)
 					<br/>
 					<?php _e('The default format to use when displaying the expiration date within a post using the [postexpirator] shortcode or within the footer.  For information on valid formatting options, see: <a href="http://us2.php.net/manual/en/function.date.php" target="_blank">PHP Date Function</a>.','post-expirator'); ?>
 				</td>
@@ -590,7 +590,7 @@ function postExpiratorMenuGeneral() {
 			<tr valign-"top">
 				<th scope="row"><label for="expired-default-time-format"><?php _e('Time Format:','post-expirator');?></label></th>
 				<td>
-					<input type="text" name="expired-default-time-format" id="expired-default-time-format" value="<?php echo $expirationdateDefaultTimeFormat ?>" size="25" /> (<?php echo date("$expirationdateDefaultTimeFormat") ?>)
+					<input type="text" name="expired-default-time-format" id="expired-default-time-format" value="<?php echo $expirationdateDefaultTimeFormat ?>" size="25" /> (<?php echo date_i18n("$expirationdateDefaultTimeFormat") ?>)
 					<br/>
 					<?php _e('The default format to use when displaying the expiration time within a post using the [postexpirator] shortcode or within the footer.  For information on valid formatting options, see: <a href="http://us2.php.net/manual/en/function.date.php" target="_blank">PHP Date Function</a>.','post-expirator'); ?>
 				</td>
@@ -643,9 +643,9 @@ function postExpiratorMenuGeneral() {
 					<br/>
 					<?php _e('Enter the text you would like to appear at the bottom of every post that will expire.  The following placeholders will be replaced with the post expiration date in the following format:','post-expirator');?>
 					<ul>
-						<li>EXPIRATIONFULL -> <?php echo date("$expirationdateDefaultDateFormat $expirationdateDefaultTimeFormat") ?></li>
-						<li>EXPIRATIONDATE -> <?php echo date("$expirationdateDefaultDateFormat") ?></li>
-						<li>EXPIRATIONTIME -> <?php echo date("$expirationdateDefaultTimeFormat") ?></li>
+						<li>EXPIRATIONFULL -> <?php echo date_i18n("$expirationdateDefaultDateFormat $expirationdateDefaultTimeFormat") ?></li>
+						<li>EXPIRATIONDATE -> <?php echo date_i18n("$expirationdateDefaultDateFormat") ?></li>
+						<li>EXPIRATIONTIME -> <?php echo date_i18n("$expirationdateDefaultTimeFormat") ?></li>
 					</ul>
 				</td>
 			</tr>
@@ -653,7 +653,7 @@ function postExpiratorMenuGeneral() {
 				<th scope="row"><label for="expired-footer-style"><?php _e('Footer Style:','post-expirator');?></label></th>
 				<td>
 					<input type="text" name="expired-footer-style" id="expired-footer-style" value="<?php echo $expirationdateFooterStyle ?>" size="25" />
-					(<span style="<?php echo $expirationdateFooterStyle ?>"><?php _e('This post will expire on','post-expirator');?> <?php echo date("$expirationdateDefaultDateFormat $expirationdateDefaultTimeFormat"); ?></span>)
+					(<span style="<?php echo $expirationdateFooterStyle ?>"><?php _e('This post will expire on','post-expirator');?> <?php echo date_i18n("$expirationdateDefaultDateFormat $expirationdateDefaultTimeFormat"); ?></span>)
 					<br/>
 					<?php _e('The inline css which will be used to style the footer text.','post-expirator');?>
 				</td>
@@ -809,7 +809,7 @@ function postExpiratorMenuDiagnostics() {
 					foreach ($cron as $key=>$value) {
 						foreach ($value as $eventkey=>$eventvalue) {
 						print '<tr>';
-						print '<td>'.date('r',$key).'</td>';
+						print '<td>'.date_i18n('r',$key).'</td>';
 						print '<td>'.$eventkey.'</td>';
 						$arrkey = array_keys($eventvalue);
 						print '<td>'.$eventvalue[$arrkey[0]]['schedule'].'</td>';
@@ -913,9 +913,9 @@ function postexpirator_add_footer($text) {
 		'EXPIRATIONTIME'
 	);
 	$replace = array(
-		date("$dateformat $timeformat",$expirationdatets),
-		date("$dateformat",$expirationdatets),
-		date("$timeformat",$expirationdatets)
+		date_i18n("$dateformat $timeformat",$expirationdatets),
+		date_i18n("$dateformat",$expirationdatets),
+		date_i18n("$timeformat",$expirationdatets)
 	);
 
 	$add_to_footer = '<p style="'.$expirationdateFooterStyle.'">'.str_replace($search,$replace,$expirationdateFooterContents).'</p>';

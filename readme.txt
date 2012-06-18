@@ -48,6 +48,7 @@ This section describes how to install the plugin and get it working.
 **Version 1.5.5**
 
 * Fixed invalid html
+* Fixed i18n issues with dates
 * Replaced "Upgrade" tab with new "Diagnostics" tab
 * Added a debugging option
 
@@ -131,6 +132,7 @@ NOTE: After upgrading, you may need to reset the cron schedules.  Following onsc
 
 = 1.5.5 =
 Fixed invalid html
+Fixed i18n issues with dates
 Replaced "Upgrade" tab with new "Diagnostics" tab
 Added a debugging option
 
