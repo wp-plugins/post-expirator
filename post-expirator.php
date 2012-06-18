@@ -733,7 +733,7 @@ function postExpiratorMenuDiagnostics() {
 					if ($debug) { 
 						echo __('Status: Enabled','post-expirator').'<br/>';
 						echo '<input type="submit" name="debugging-disable" id="debugging-disable" value="'.__('Disable Debugging','post-expirator').'" />';
-					} elseif ($debug === false) {
+					} else {
 						echo __('Status: Disabled','post-expirator').'<br/>';
 						echo '<input type="submit" name="debugging-enable" id="debugging-enable" value="'.__('Enable Debugging','post-expirator').'" />';
 					}
