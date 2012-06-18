@@ -45,6 +45,12 @@ This section describes how to install the plugin and get it working.
 
 == Changelog ==
 
+**Version 1.5.5**
+
+* Fixed invalid html
+* Replaced "Upgrade" tab with new "Diagnostics" tab
+* Added a debugging option
+
 **Version 1.5.4**
 
 * Cleaned up deprecated function calls
@@ -122,6 +128,11 @@ NOTE: After upgrading, you may need to reset the cron schedules.  Following onsc
 * Initial Release
 
 == Upgrade Notice ==
+
+= 1.5.5 =
+Fixed invalid html
+Replaced "Upgrade" tab with new "Diagnostics" tab
+Added a debugging option
 
 = 1.5.4 =
 Cleaned up deprecated function calls

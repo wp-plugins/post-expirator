@@ -7,3 +7,10 @@
 #post-expirator-cat-list ul ul {
 	margin-left: 18px;
 }
+.post-expirator-debug th {
+	font-weight: bold;
+	border-bottom: 1px solid black;
+}
+.post-expirator-timestamp {
+	width: 150px;
+}
