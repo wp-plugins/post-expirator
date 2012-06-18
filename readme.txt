@@ -51,6 +51,7 @@ This section describes how to install the plugin and get it working.
 * Fixed i18n issues with dates
 * Fixed problem when using "Network Activate" - reworked plugin activation process
 * Replaced "Upgrade" tab with new "Diagnostics" tab
+* Reworked expire logic to limit the number of sql queries needed
 * Added debugging
 
 **Version 1.5.4**
@@ -134,8 +135,10 @@ NOTE: After upgrading, you may need to reset the cron schedules.  Following onsc
 = 1.6 =
 Fixed invalid html
 Fixed i18n issues with dates
+Fixed problem when using "Network Activate" - reworked plugin activation process
 Replaced "Upgrade" tab with new "Diagnostics" tab
-Added a debugging option
+Reworked expire logic to limit the number of sql queries needed
+Added debugging
 
 = 1.5.4 =
 Cleaned up deprecated function calls

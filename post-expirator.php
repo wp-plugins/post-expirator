@@ -699,7 +699,7 @@ function postExpiratorMenuDiagnostics() {
 	if ($schedule) $cronschedulestatus = '<span style="color:green">'.__('OK','post-expirator').'</span>';
 	else $cronschedulestatus = '<span style="color:red">'.__('ERROR WITH FILTER','post-expirator').'</span>';
 
-	$debug = get_option('expirationdateDebug');
+	$debug = postExpiratorDebugEnabled();
 
 	?>
         <form method="post" id="postExpiratorMenuUpgrade">
@@ -730,10 +730,10 @@ function postExpiratorMenuDiagnostics() {
                                 <th scope="row"><label for="postexpirator-log"><?php _e('Post Expirator Debug Logging:','post-expirator');?></label></th>
                                 <td>
 					<?php
-					if ($debug == 1) { 
+					if ($debug) { 
 						echo __('Status: Enabled','post-expirator').'<br/>';
 						echo '<input type="submit" name="debugging-disable" id="debugging-disable" value="'.__('Disable Debugging','post-expirator').'" />';
-					} elseif ($debug == 0) {
+					} elseif ($debug === false) {
 						echo __('Status: Disabled','post-expirator').'<br/>';
 						echo '<input type="submit" name="debugging-enable" id="debugging-enable" value="'.__('Enable Debugging','post-expirator').'" />';
 					}
