@@ -76,17 +76,19 @@ function expirationdate_delete_expired_posts() {
 		require_once(plugin_dir_path(__FILE__).'post-expirator-debug.php');
 
 		$debug = new postExpiratorDebug();
-		$ts = mktime();
-		$debug->save(array('timestamp' => $ts,'message' => 'START'));
-		$debug->save(array('timestamp' => $ts,'message' => 'SQL EXPIRE: '.$sql));
+		$startts = mktime();
+		$debug->save(array('timestamp' => $startts,'message' => 'START'));
+		$debug->save(array('timestamp' => $startts,'message' => 'SQL EXPIRE: '.$sql));
 	}
+
+	$processsql = 'select post_id from '.$wpdb->postmeta.' where meta_key = "_expiration-date-processed" AND meta_value = "1"';
+	if ($debugEnabled) $debug->save(array('timestamp' => mktime(),'message' => 'SQL PROCESSED: '.$processsql));
+	$processresult = $wpdb->get_col($processsql);
+	if ($debugEnabled) $debug->save(array('timestamp' => mktime(),'message' => 'PROCESSED POST IDS: '.print_r($processresult,true)));
 
   	if (!empty($result)) foreach ($result as $a) {
 		// Check to see if already proccessed
-		$sql = 'select meta_value from ' . $wpdb->postmeta . ' as postmeta, '.$wpdb->posts.' as posts where postmeta.post_id = posts.ID AND posts.ID = '.$a->post_id.' AND postmeta.meta_key = "_expiration-date-processed"';
-		$processed = $wpdb->get_var($sql);
-		if ($debugEnabled) $debug->save(array('timestamp' => $ts,'message' => 'SQL PROCESS: '.$sql));
-		if (!empty($processed) && $processed == 1) continue;
+		if (in_array($a->post_id,$processresult)) continue;
 
 		$post_result = $wpdb->get_var('select post_type from ' . $wpdb->posts .' where ID = '. $a->post_id);
 		if ($post_result == 'post') {
@@ -102,24 +104,24 @@ function expirationdate_delete_expired_posts() {
 		$cat = get_post_meta($a->post_id,'_expiration-date-category');
 	        if (($catEnabled === false || $catEnabled == 1) && (isset($cat) && !empty($cat[0]))) {
 			wp_update_post(array('ID' => $a->post_id, 'post_category' => $cat[0]));
-			if ($debugEnabled) $debug->save(array('timestamp' => $ts,'message' => 'EXPIRE: ID:'.$a->post_id.' CATEGORY:'.$cat[0]));
+			if ($debugEnabled) $debug->save(array('timestamp' => mktime(),'message' => 'EXPIRE: ID:'.$a->post_id.' CATEGORY:'.print_r($cat[0],true)));
 		} else {
 			if ($expiredStatus == 'delete') {
 				wp_delete_post($a->post_id);
-				if ($debugEnabled) $debug->save(array('timestamp' => $ts,'message' => 'EXPIRE: ID:'.$a->post_id.' DELETE'));
+				if ($debugEnabled) $debug->save(array('timestamp' => mktime(),'message' => 'EXPIRE: ID:'.$a->post_id.' DELETE'));
 			} else {
 				wp_update_post(array('ID' => $a->post_id, 'post_status' => 'draft'));
         		        delete_post_meta($a->post_id, 'expiration-date');
        			        update_post_meta($a->post_id, 'expiration-date', $a->meta_value);
-				if ($debugEnabled) $debug->save(array('timestamp' => $ts,'message' => 'EXPIRE: ID:'.$a->post_id.' DRAFT'));
+				if ($debugEnabled) $debug->save(array('timestamp' => mktime(),'message' => 'EXPIRE: ID:'.$a->post_id.' DRAFT'));
 			}
 		}
 
 		// Mark as Processed
 		update_post_meta($a->post_id, '_expiration-date-processed', 1);
-		if ($debugEnabled) $debug->save(array('timestamp' => $ts,'message' => 'PROCESSED: ID:'.$a->post_id));
+		if ($debugEnabled) $debug->save(array('timestamp' => mktime(),'message' => 'PROCESSED: ID:'.$a->post_id));
 	}
-	if ($debugEnabled) $debug->save(array('timestamp' => $ts,'message' => 'END'));
+	if ($debugEnabled) $debug->save(array('timestamp' => mktime(),'message' => 'END - DURATION: '.(mktime() - $startts)));
 }
 if (postExpirator_is_wpmu())
 	add_action ('expirationdate_delete_'.$current_blog->blog_id, 'expirationdate_delete_expired_posts');
