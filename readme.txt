@@ -53,6 +53,7 @@ This section describes how to install the plugin and get it working.
 * Replaced "Upgrade" tab with new "Diagnostics" tab
 * Reworked expire logic to limit the number of sql queries needed
 * Added debugging
+* Various code cleanup
 
 **Version 1.5.4**
 
