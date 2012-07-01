@@ -25,6 +25,7 @@ define('POSTEXPIRATOR_PAGESTATUS','Draft');
 define('POSTEXPIRATOR_FOOTERDISPLAY','0');
 define('POSTEXPIRATOR_CATEGORY','1');
 define('POSTEXPIRATOR_DEBUG','0');
+define('POSTEXPIRATOR_CRONSCHEDULE','postexpiratorminute');
 
 // Detect WPMU/MultiSite
 function postExpirator_is_wpmu() {
@@ -42,10 +43,10 @@ function postExpiratorTimezoneSetup() {
 
 // Add cron interval of 60 seconds
 function postExpiratorAddCronMinutes($array) {
-       $array['postexpiratorminute'] = array(
-               'interval' => 60,
-               'display' => __('Once a Minute','post-expirator')
-       );
+       	$array['postexpiratorminute'] = array(
+		'interval' => 60,
+		'display' => __('Once a Minute','post-expirator')
+       	);
 	return $array;
 }
 add_filter('cron_schedules','postExpiratorAddCronMinutes');
@@ -422,6 +423,8 @@ function postExpiratorMenuGeneral() {
 		update_option('expirationdateFooterStyle',$_POST['expired-footer-style']);
 		update_option('expirationdateCategory',$_POST['expired-category']);
 		update_option('expirationdateCategoryDefaults',$_POST['expirationdate_category']);
+		update_option('expirationdateCronSchedule',$_POST['expired-default-cron-schedule']);
+		postExpiratorResetCronEvent();
                 echo "<div id='message' class='updated fade'><p>";
                 _e('Saved Options!','post-expirator');
                 echo "</p></div>";
@@ -437,6 +440,7 @@ function postExpiratorMenuGeneral() {
 	$expireddisplayfooter = get_option('expirationdateDisplayFooter',POSTEXPIRATOR_FOOTERDISPLAY);
 	$expirationdateFooterContents = get_option('expirationdateFooterContents',POSTEXPIRATOR_FOOTERCONTENTS);
 	$expirationdateFooterStyle = get_option('expirationdateFooterStyle',POSTEXPIRATOR_FOOTERSTYLE);
+	$expirationdateCronSchedule = get_option('expirationdateCronSchedule',POSTEXPIRATOR_CRONSCHEDULE);
 
 	$categories = get_option('expirationdateCategoryDefaults');
 
@@ -506,6 +510,20 @@ function postExpiratorMenuGeneral() {
 					<?php _e('The default format to use when displaying the expiration time within a post using the [postexpirator] shortcode or within the footer.  For information on valid formatting options, see: <a href="http://us2.php.net/manual/en/function.date.php" target="_blank">PHP Date Function</a>.','post-expirator'); ?>
 				</td>
 			</tr>
+			<tr valign-"top">
+				<th scope="row"><label for="expired-default-cron-schedule"><?php _e('Cron Schedule:','post-expirator');?></label></th>
+				<td>
+					<select name="expired-default-cron-schedule" id="expired-default-cron-schedule">
+					<?php $schedules = wp_get_schedules();
+					foreach ($schedules as $key=>$value) {
+						$selected = ($key == $expirationdateCronSchedule) ? ' selected="selected"' : '';
+						echo '<option value="'.$key.'"'.$selected.'>'.$value['display'].' ('.$key.') </option>';
+					} ?>
+					</select>
+					<br/>
+					<?php _e('By default set to "postexpiratorminute" which fires every minute.','post-expirator'); ?>
+				</td>
+			</tr>
 		</table>
 		<h3><?php _e('Category Expiration','post-expirator');?></h3>
 		<table class="form-table">
@@ -571,7 +589,7 @@ function postExpiratorMenuGeneral() {
 			</tr>
 		</table>
 		<p class="submit">
-			<input type="submit" name="expirationdateSave" value="<?php _e('Save','post-expirator');?>" />
+			<input type="submit" name="expirationdateSave" class="button-primary" value="<?php _e('Save Changes','post-expirator');?>" />
 		</p>
 	</form>
 	<?php
@@ -582,27 +600,19 @@ function postExpiratorCronEventStatus() {
 	// WPMU
 	if (postExpirator_is_wpmu()) {
 		global $current_blog;
-		$names[] = 'expirationdate_delete_'.$current_blog->blog_id;
+		$name = 'expirationdate_delete_'.$current_blog->blog_id;
 	} else {
-		$names[] = 'expirationdate_delete';
+		$name = 'expirationdate_delete';
 	}
 
-	$results = array();
-	foreach ( $names as $name ) {
-		if (wp_get_schedule($name) !== false) array_push($results,wp_get_schedule($name));
-	}
+	$expirationdateCronSchedule = get_option('expirationdateCronSchedule',POSTEXPIRATOR_CRONSCHEDULE);
+	if (wp_get_schedule($name) != $expirationdateCronSchedule) return false;
 
-	if (empty($results)) return false;
-
- 	foreach ( $results as $result ) {
-		if ($result == 'hourly') return false;
-	}
 	return true;
 }
 
 function postExpiratorCronScheduleStatus() {
 	$schedules = wp_get_schedules();
-
 	if (isset($schedules['postexpiratorminute'])) {
 		if ($schedules['postexpiratorminute']['interval'] == '60')
 			return true;
@@ -620,9 +630,9 @@ function postExpiratorResetCronEvent() {
 	if (postExpirator_is_wpmu()) {
 		global $current_blog;
 		wp_clear_scheduled_hook('expirationdate_delete_'.$current_blog->blog_id);
-		wp_schedule_event(current_time('timestamp'), 'postexpiratorminute', 'expirationdate_delete_'.$current_blog->blog_id);
+		wp_schedule_event(current_time('timestamp'), get_option('expirationdateCronSchedule',POSTEXPIRATOR_CRONSCHEDULE), 'expirationdate_delete_'.$current_blog->blog_id);
 	} else {
-		wp_schedule_event(current_time('timestamp'), 'postexpiratorminute', 'expirationdate_delete');
+		wp_schedule_event(current_time('timestamp'), get_option('expirationdateCronSchedule',POSTEXPIRATOR_CRONSCHEDULE), 'expirationdate_delete');
 	}
 }
 
@@ -657,7 +667,7 @@ function postExpiratorMenuDiagnostics() {
                         <tr valign-"top">
                                 <th scope="row"><label for="reset-cron-event"><?php _e('Reset Cron Event:','post-expirator');?></label></th>
                                 <td>
-					<input type="submit" name="reset-cron-event" id="reset-cron-event" value="<?php _e('Reset','post-expirator');?>" />
+					<input type="submit" class="button" name="reset-cron-event" id="reset-cron-event" value="<?php _e('Reset','post-expirator');?>" />
 					<?php _e('Status:','post-expirator');?> <?php echo $cronstatus; ?>
                                         <br/>
 					<?php _e('Resets the cron event and removes any old or stray entries.','post-expirator');?>
@@ -681,10 +691,10 @@ function postExpiratorMenuDiagnostics() {
 					<?php
 					if ($debug) { 
 						echo __('Status: Enabled','post-expirator').'<br/>';
-						echo '<input type="submit" name="debugging-disable" id="debugging-disable" value="'.__('Disable Debugging','post-expirator').'" />';
+						echo '<input type="submit" class="button" name="debugging-disable" id="debugging-disable" value="'.__('Disable Debugging','post-expirator').'" />';
 					} else {
 						echo __('Status: Disabled','post-expirator').'<br/>';
-						echo '<input type="submit" name="debugging-enable" id="debugging-enable" value="'.__('Enable Debugging','post-expirator').'" />';
+						echo '<input type="submit" class="button" name="debugging-enable" id="debugging-enable" value="'.__('Enable Debugging','post-expirator').'" />';
 					}
 					?>
                                         <br/>
@@ -694,15 +704,20 @@ function postExpiratorMenuDiagnostics() {
                         <tr valign-"top">
                                 <th scope="row"><?php _e('Purge Debug Log:','post-expirator');?></th>
                                 <td>
-					<input type="submit" name="purge-debug" id="purge-debug" value="<?php _e('Purge Debug Log','post-expirator');?>" />
+					<input type="submit" class="button" name="purge-debug" id="purge-debug" value="<?php _e('Purge Debug Log','post-expirator');?>" />
 				</td>
 			</tr/>
                         <tr valign-"top">
                                 <th scope="row"><label for="cron-schedule"><?php _e('Current Cron Schedule:','post-expirator');?></label></th>
                                 <td>
 					<?php _e('The below table will show all currently scheduled cron events with the next run time.','post-expirator');?><br/>
-					<?php _e('Single site (non multisite) users should see an event named expirationdate_delete with a schedule of postexpiratorminute.','post-expirator');?><br/>
-					<?php if (postExpirator_is_wpmu()) _e('Multisite users should see an event named expirationdate_delete_blogid (where the blogid is replaced with the numeric id of the blog) with a schedule of postexpiratorminute','post-expirator');?>
+					<?php 
+					if (postExpirator_is_wpmu())
+						printf(__('There should be an event named expirationdate_delete_blogid (where the blogid is replaced with the numeric id of the blog) with a schedule of %s.','post-expirator'),'<em>'.get_option('expirationdateCronSchedule',POSTEXPIRATOR_CRONSCHEDULE).'</em>');
+					else
+						printf(__('There should be an event named expirationdate_delete with a schedule of %s.','post-expirator'),'<em>'.get_option('expirationdateCronSchedule',POSTEXPIRATOR_CRONSCHEDULE.'</em>'));
+					?><br/>
+					
 					<table>
 						<tr>
 							<th><?php _e('Date','post-expirator');?></th>
@@ -868,9 +883,9 @@ function postexpirator_activate () {
 
 	if (postExpirator_is_wpmu()) {
 		global $current_blog;
-		wp_schedule_event(current_time('timestamp'), 'postexpiratorminute', 'expirationdate_delete_'.$current_blog->blog_id);
+		wp_schedule_event(current_time('timestamp'), get_option('expirationdateCronSchedule',POSTEXPIRATOR_CRONSCHEDULE), 'expirationdate_delete_'.$current_blog->blog_id);
 	} else
-		wp_schedule_event(current_time('timestamp'), 'postexpiratorminute', 'expirationdate_delete');
+		wp_schedule_event(current_time('timestamp'), get_option('expirationdateCronSchedule',POSTEXPIRATOR_CRONSCHEDULE), 'expirationdate_delete');
 }
 
 /**
@@ -889,6 +904,7 @@ function expirationdate_deactivate () {
 	delete_option('expirationdateCategoryDefaults');
 	delete_option('expirationdateDebug');
 	delete_option('postexpiratorVersion');
+	delete_option('expirationdateCronSchedule');
 	if (postExpirator_is_wpmu())
 		wp_clear_scheduled_hook('expirationdate_delete_'.$current_blog->blog_id);
 	else
