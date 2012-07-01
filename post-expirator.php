@@ -429,7 +429,7 @@ function postExpiratorMenuGeneral() {
 	postExpiratorTimezoneSetup();
 
 	// Get Option
-	$expirationdateExpiredPostStatus = get_option('expirationdateExpiredPostStatus',POSTEXPIRATOR_DEBUG);
+	$expirationdateExpiredPostStatus = get_option('expirationdateExpiredPostStatus',POSTEXPIRATOR_POSTSTATUS);
 	$expirationdateExpiredPageStatus = get_option('expirationdateExpiredPageStatus',POSTEXPIRATOR_PAGESTATUS);
 	$expirationdateDefaultDateFormat = get_option('expirationdateDefaultDateFormat',POSTEXPIRATOR_DATEFORMAT);
 	$expirationdateDefaultTimeFormat = get_option('expirationdateDefaultTimeFormat',POSTEXPIRATOR_TIMEFORMAT);
