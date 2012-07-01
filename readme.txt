@@ -49,6 +49,7 @@ This section describes how to install the plugin and get it working.
 
 * Tweaked error messages, removed clicks for reset cron event
 * Switched cron schedule functions to use "current_time('timestamp')"
+* Cleand up default values code
 
 **Version 1.6**
 

@@ -10,17 +10,21 @@ Translation: Thierry (http://palijn.info)
 Text Domain: post-expirator
 */
 
-define('POSTEXPIRATOR_VERSION','1.6');
-
 /* Load translation, if it exists */
 $plugin_dir = basename(dirname(__FILE__));
 load_plugin_textdomain( 'post-expirator', null, $plugin_dir.'/languages/' );
 
 // Default Values
-$expirationdateDefaultDateFormat = __('l F jS, Y','post-expirator');
-$expirationdateDefaultTimeFormat = __('g:ia','post-expirator');
-$expirationdateDefaultFooterContents = __('Post expires at EXPIRATIONTIME on EXPIRATIONDATE','post-expirator');
-$expirationdateDefaultFooterStyle = 'font-style: italic;';
+define('POSTEXPIRATOR_VERSION','1.6');
+define('POSTEXPIRATOR_DATEFORMAT',__('l F jS, Y','post-expirator'));
+define('POSTEXPIRATOR_TIMEFORMAT',__('g:ia','post-expirator'));
+define('POSTEXPIRATOR_FOOTERCONTENTS',__('Post expires at EXPIRATIONTIME on EXPIRATIONDATE','post-expirator'));
+define('POSTEXPIRATOR_FOOTERSTYLE','font-style: italic;');
+define('POSTEXPIRATOR_POSTSTATUS','Draft');
+define('POSTEXPIRATOR_PAGESTATUS','Draft');
+define('POSTEXPIRATOR_FOOTERDISPLAY','0');
+define('POSTEXPIRATOR_CATEGORY','1');
+define('POSTEXPIRATOR_DEBUG','0');
 
 // Detect WPMU/MultiSite
 function postExpirator_is_wpmu() {
@@ -96,9 +100,9 @@ function expirationdate_delete_expired_posts() {
 
 		$post_result = $wpdb->get_var('select post_type from ' . $wpdb->posts .' where ID = '. $a->post_id);
 		if ($post_result == 'post') {
-			$expiredStatus = strtolower(get_option('expirationdateExpiredPostStatus'));
+			$expiredStatus = strtolower(get_option('expirationdateExpiredPostStatus',POSTEXPIRATOR_POSTSTATUS));
 		} else if ($post_result == 'page') {
-			$expiredStatus = strtolower(get_option('expirationdateExpiredPageStatus'));
+			$expiredStatus = strtolower(get_option('expirationdateExpiredPageStatus',POSTEXPIRATOR_PAGESTATUS));
 		} else {
 			$expiredStatus = 'draft';
 		}
@@ -423,36 +427,18 @@ function postExpiratorMenuGeneral() {
                 echo "</p></div>";
 	}
 	postExpiratorTimezoneSetup();
+
 	// Get Option
-	$expirationdateExpiredPostStatus = get_option('expirationdateExpiredPostStatus');
-	if (empty($expirationdateExpiredPostStatus))
-		$expirationdateExpiredPostStatus = 'Draft';
-
-	$expirationdateExpiredPageStatus = get_option('expirationdateExpiredPageStatus');
-	if (empty($expirationdateExpiredPageStatus))
-		$expirationdateExpiredPageStatus = 'Draft';
-
-	$expirationdateDefaultDateFormat = get_option('expirationdateDefaultDateFormat');
-	if (empty($expirationdateDefaultDateFormat)) {
-		global $expirationdateDefaultDateFormat;
-		$expirationdateDefaultDateFormat = $expirationdateDefaultDateFormat;
-	}
-
-	$expirationdateDefaultTimeFormat = get_option('expirationdateDefaultTimeFormat');
-	if (empty($expirationdateDefaultTimeFormat)) {
-		global $expirationdateDefaultTimeFormat;
-		$expirationdateDefaultTimeFormat = $expirationdateDefaultTimeFormat;
-	}
+	$expirationdateExpiredPostStatus = get_option('expirationdateExpiredPostStatus',POSTEXPIRATOR_DEBUG);
+	$expirationdateExpiredPageStatus = get_option('expirationdateExpiredPageStatus',POSTEXPIRATOR_PAGESTATUS);
+	$expirationdateDefaultDateFormat = get_option('expirationdateDefaultDateFormat',POSTEXPIRATOR_DATEFORMAT);
+	$expirationdateDefaultTimeFormat = get_option('expirationdateDefaultTimeFormat',POSTEXPIRATOR_TIMEFORMAT);
+	$expiredcategory = get_option('expirationdateCategory',POSTEXPIRATOR_CATEGORY);
+	$expireddisplayfooter = get_option('expirationdateDisplayFooter',POSTEXPIRATOR_FOOTERDISPLAY);
+	$expirationdateFooterContents = get_option('expirationdateFooterContents',POSTEXPIRATOR_FOOTERCONTENTS);
+	$expirationdateFooterStyle = get_option('expirationdateFooterStyle',POSTEXPIRATOR_FOOTERSTYLE);
 
 	$categories = get_option('expirationdateCategoryDefaults');
-
-	$expiredcategory = get_option('expirationdateCategory');
-	if (!isset($expiredcategory))
-		$expiredcategory = 1;
-
-	$expireddisplayfooter = get_option('expirationdateDisplayFooter');
-	if (empty($expireddisplayfooter))
-		$expireddisplayfooter = 0;
 
 	$expireddisplayfooterenabled = '';
 	$expireddisplayfooterdisabled = '';
@@ -466,17 +452,6 @@ function postExpiratorMenuGeneral() {
 	else if ($expiredcategory == 1)
 		$expiredcategoryenabled = 'checked="checked"';
 
-	$expirationdateFooterContents = get_option('expirationdateFooterContents');
-	if (empty($expirationdateFooterContents)) {
-		global $expirationdateDefaultFooterContents;
-		$expirationdateFooterContents = $expirationdateDefaultFooterContents;
-	}
-
-	$expirationdateFooterStyle = get_option('expirationdateFooterStyle');
-	if (empty($expirationdateFooterStyle)) {
-		global $expirationdateDefaultFooterStyle;
-		$expirationdateFooterStyle = $expirationdateDefaultFooterStyle;
-	}
 
 	?>
 	<p>
@@ -773,8 +748,8 @@ function postexpirator_shortcode($atts) {
 		return false;
 
 	extract(shortcode_atts(array(
-		'dateformat' => get_option('expirationdateDefaultDateFormat'),
-		'timeformat' => get_option('expirationdateDefaultTimeFormat'),
+		'dateformat' => get_option('expirationdateDefaultDateFormat',POSTEXPIRATOR_DATEFORMAT),
+		'timeformat' => get_option('expirationdateDefaultTimeFormat',POSTEXPIRATOR_TIMEFORMAT),
 		'type' => full,
 		'tz' => date('T')
 	), $atts));
@@ -813,29 +788,10 @@ function postexpirator_add_footer($text) {
 	if (!is_numeric($expirationdatets))
 		return $text;
 
-        $dateformat = get_option('expirationdateDefaultDateFormat');
-	if (empty($dateformat)) {
-		global $expirationdateDefaultDateFormat;
-		$dateformat = $expirationdateDefaultDateFormat;		
-	}
-
-        $timeformat = get_option('expirationdateDefaultTimeFormat');
-	if (empty($timeformat)) {
-		global $expirationdateDefaultTimeFormat;
-		$timeformat = $expirationdateDefaultTimeFormat;		
-	}
-
-        $expirationdateFooterContents = get_option('expirationdateFooterContents');
-        if (empty($expirationdateFooterContents)) {
-                global $expirationdateDefaultFooterContents;
-                $expirationdateFooterContents = $expirationdateDefaultFooterContents;
-        }
-	
-        $expirationdateFooterStyle = get_option('expirationdateFooterStyle');
-        if (empty($expirationdateFooterStyle)) {
-                global $expirationdateDefaultFooterStyle;
-                $expirationdateFooterStyle = $expirationdateDefaultFooterStyle;
-        }
+        $dateformat = get_option('expirationdateDefaultDateFormat',POSTEXPIRATOR_DATEFORMAT);
+        $timeformat = get_option('expirationdateDefaultTimeFormat',POSTEXPIRATOR_TIMEFORMAT);
+        $expirationdateFooterContents = get_option('expirationdateFooterContents',POSTEXPIRATOR_FOOTERCONTENTS);
+        $expirationdateFooterStyle = get_option('expirationdateFooterStyle',POSTEXPIRATOR_FOOTERSTYLE);
 	
 	postExpiratorTimezoneSetup();
 	$search = array(
@@ -886,6 +842,12 @@ function postexpirator_upgrade() {
 	if ($version === false) { //not installed, run default activation
 		postexpirator_activate();
 		update_option('postexpiratorVersion',POSTEXPIRATOR_VERSION);
+	} elseif ($version !== POSTEXPIRATOR_VERSION) {
+		switch (POSTEXPIRATOR_VERSION) {
+			case '1.6.1':
+				update_option('postexpiratorVersion',POSTEXPIRATOR_VERSION);		
+				break;
+		}
 	}
 }
 add_action('admin_init','postexpirator_upgrade');
@@ -894,20 +856,20 @@ add_action('admin_init','postexpirator_upgrade');
  * Called at plugin activation
  */
 function postexpirator_activate () {
-	global $current_blog,$expirationdateDefaultDateFormat,$expirationdateDefaultTimeFormat,$expirationdateDefaultFooterContents,$expirationdateDefaultFooterStyle;
-	if (get_option('expirationdateExpiredPostStatus') === false) 	update_option('expirationdateExpiredPostStatus','Draft');
-	if (get_option('expirationdateExpiredPageStatus') === false)	update_option('expirationdateExpiredPageStatus','Draft');
-	if (get_option('expirationdateDefaultDateFormat') === false)	update_option('expirationdateDefaultDateFormat',$expirationdateDefaultDateFormat);
-	if (get_option('expirationdateDefaultTimeFormat') === false)	update_option('expirationdateDefaultTimeFormat',$expirationdateDefaultTimeFormat);
-	if (get_option('expirationdateFooterContents') === false)	update_option('expirationdateFooterContents',$expirationdateDefaultFooterContents);
-	if (get_option('expirationdateFooterStyle') === false)		update_option('expirationdateFooterStyle',$expirationdateDefaultFooterStyle);
-	if (get_option('expirationdateDisplayFooter') === false)	update_option('expirationdateDisplayFooter',0);
-	if (get_option('expirationdateCategory') === false)		update_option('expirationdateCategory',1);
-	if (get_option('expirationdateDebug') === false)		update_option('expirationdateDebug',0);
+	if (get_option('expirationdateExpiredPostStatus') === false) 	update_option('expirationdateExpiredPostStatus',POSTEXPIRATOR_POSTSTATUS);
+	if (get_option('expirationdateExpiredPageStatus') === false)	update_option('expirationdateExpiredPageStatus',POSTEXPIRATOR_PAGESTATUS);
+	if (get_option('expirationdateDefaultDateFormat') === false)	update_option('expirationdateDefaultDateFormat',POSTEXPIRATOR_DATEFORMAT);
+	if (get_option('expirationdateDefaultTimeFormat') === false)	update_option('expirationdateDefaultTimeFormat',POSTEXPIRATOR_TIMEFORMAT);
+	if (get_option('expirationdateFooterContents') === false)	update_option('expirationdateFooterContents',POSTEXPIRATOR_FOOTERCONTENTS);
+	if (get_option('expirationdateFooterStyle') === false)		update_option('expirationdateFooterStyle',POSTEXPIRATOR_FOOTERSTYLE);
+	if (get_option('expirationdateDisplayFooter') === false)	update_option('expirationdateDisplayFooter',POSTEXPIRATOR_FOOTERDISPLAY);
+	if (get_option('expirationdateCategory') === false)		update_option('expirationdateCategory',POSTEXPIRATOR_CATEGORY);
+	if (get_option('expirationdateDebug') === false)		update_option('expirationdateDebug',POSTEXPIRATOR_DEBUG);
 
-	if (postExpirator_is_wpmu())
+	if (postExpirator_is_wpmu()) {
+		global $current_blog;
 		wp_schedule_event(current_time('timestamp'), 'postexpiratorminute', 'expirationdate_delete_'.$current_blog->blog_id);
-	else
+	} else
 		wp_schedule_event(current_time('timestamp'), 'postexpiratorminute', 'expirationdate_delete');
 }
 
@@ -924,6 +886,7 @@ function expirationdate_deactivate () {
 	delete_option('expirationdateFooterContents');
 	delete_option('expirationdateFooterStyle');
 	delete_option('expirationdateCategory');
+	delete_option('expirationdateCategoryDefaults');
 	delete_option('expirationdateDebug');
 	delete_option('postexpiratorVersion');
 	if (postExpirator_is_wpmu())
