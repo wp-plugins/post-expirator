@@ -408,8 +408,6 @@ add_action('admin_menu', 'postExpiratorPluginMenu');
  * Show the Expiration Date options page
  */
 function postExpiratorMenuGeneral() {
-                global $current_blog;
-                wp_clear_scheduled_hook('expirationdate_delete_'.$current_blog->blog_id);
 
 	if ($_POST['expirationdateSave']) {
 		update_option('expirationdateExpiredPostStatus',$_POST['expired-post-status']);
