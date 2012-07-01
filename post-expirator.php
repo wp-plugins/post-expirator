@@ -51,6 +51,16 @@ function postExpiratorAddCronMinutes($array) {
 }
 add_filter('cron_schedules','postExpiratorAddCronMinutes');
 
+function postExpirator_plugin_action_links($links, $file) {
+    $this_plugin = basename(plugin_dir_url(__FILE__)) . '/post-expirator.php';
+    if($file == $this_plugin) {
+        $links[] = '<a href="options-general.php?page=post-expirator">' . __('Settings', 'post-expirator') . '</a>';
+    }
+    return $links;
+}
+add_filter('plugin_action_links', 'postExpirator_plugin_action_links', 10, 2);
+
+
 /**
  * Add admin notice hook if cron schedule needs to be reset
  */
