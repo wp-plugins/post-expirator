@@ -15,7 +15,7 @@ area that will allow you to seperataly control whether or not posts/pages are ei
 also choose to have the post categories change at expiration time.  If you choose to change the post category, the default action of changing 
 the status will be ignored.
 
-The plugin hooks into the wp cron processes and runs every minute.
+The plugin hooks into the wp cron processes and runs every minute by default, but can be configured to use any cron schedule (hourly, twicedaily, daily, etc).
 
 The expiration date can be displayed within the actual post by using the [postexpirator] tag.  The format attribute will override the plugin 
 default display format.  See the [PHP Date Function](http://us2.php.net/manual/en/function.date.php) for valid date/time format options. 
