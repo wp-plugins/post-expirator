@@ -51,11 +51,16 @@ add_filter('cron_schedules','postExpiratorAddCronMinutes');
  */
 function postExpirationAdminNotice() {
 	if (postExpiratorCronEventStatus() === false) {
-		echo '<div class="error fade post-expirator-adminnotice"><p><strong>';
-		_e('Post Expirator cron events need to be reset. ','post-expirator');
-		echo('<a href="'.admin_url('options-general.php?page=post-expirator.php&tab=diagnostics').'" style="color: blue;">');
-		_e('Click here to reset','post-expirator');
-		echo('</a></strong></p></div>');
+		if (isset($_POST['reset-cron-event']) || (isset($_GET['reset']) && $_GET['reset'] == 'cron')) {
+                	postExpiratorResetCronEvent();
+                	echo "<div id='message' class='updated fade'><p>"; _e('Cron Events Reset!','post-expirator'); echo "</p></div>";
+		} else {
+			echo '<div class="error fade post-expirator-adminnotice"><p><strong>';
+			_e('Post Expirator cron events need to be reset. ','post-expirator');
+			echo('<a href="'.admin_url('options-general.php?page=post-expirator.php&tab=diagnostics&reset=cron').'" style="color: blue;">');
+			_e('Click here to reset','post-expirator');
+			echo('</a></strong></p></div>');
+		}
 	}
 }
 add_action('admin_notices','postExpirationAdminNotice');
@@ -403,6 +408,8 @@ add_action('admin_menu', 'postExpiratorPluginMenu');
  * Show the Expiration Date options page
  */
 function postExpiratorMenuGeneral() {
+                global $current_blog;
+                wp_clear_scheduled_hook('expirationdate_delete_'.$current_blog->blog_id);
 
 	if ($_POST['expirationdateSave']) {
 		update_option('expirationdateExpiredPostStatus',$_POST['expired-post-status']);
@@ -650,10 +657,7 @@ function postExpiratorResetCronEvent() {
 }
 
 function postExpiratorMenuDiagnostics() {
-	if (isset($_POST['reset-cron-event'])) {
-		postExpiratorResetCronEvent();
-                echo "<div id='message' class='updated fade'><p>"; _e('Cron Events Reset! (Reload page to remove warning)','post-expirator'); echo "</p></div>";
-	} elseif (isset($_POST['debugging-disable'])) {
+	if (isset($_POST['debugging-disable'])) {
 		update_option('expirationdateDebug',0);
                 echo "<div id='message' class='updated fade'><p>"; _e('Debugging Disabled','post-expirator'); echo "</p></div>";
 	} elseif (isset($_POST['debugging-enable'])) {
