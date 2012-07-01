@@ -50,17 +50,16 @@ add_filter('cron_schedules','postExpiratorAddCronMinutes');
  * Add admin notice hook if cron schedule needs to be reset
  */
 function postExpirationAdminNotice() {
+	if (isset($_POST['reset-cron-event']) || (isset($_GET['reset']) && $_GET['reset'] == 'cron')) {
+               	postExpiratorResetCronEvent();
+               	echo "<div id='message' class='updated fade'><p>"; _e('Cron Events Reset!','post-expirator'); echo "</p></div>";
+	}
 	if (postExpiratorCronEventStatus() === false) {
-		if (isset($_POST['reset-cron-event']) || (isset($_GET['reset']) && $_GET['reset'] == 'cron')) {
-                	postExpiratorResetCronEvent();
-                	echo "<div id='message' class='updated fade'><p>"; _e('Cron Events Reset!','post-expirator'); echo "</p></div>";
-		} else {
-			echo '<div class="error fade post-expirator-adminnotice"><p><strong>';
-			_e('Post Expirator cron events need to be reset. ','post-expirator');
-			echo('<a href="'.admin_url('options-general.php?page=post-expirator.php&tab=diagnostics&reset=cron').'" style="color: blue;">');
-			_e('Click here to reset','post-expirator');
-			echo('</a></strong></p></div>');
-		}
+		echo '<div class="error fade post-expirator-adminnotice"><p><strong>';
+		_e('Post Expirator cron events need to be reset. ','post-expirator');
+		echo('<a href="'.admin_url('options-general.php?page=post-expirator.php&tab=diagnostics&reset=cron').'" style="color: blue;">');
+		_e('Click here to reset','post-expirator');
+		echo('</a></strong></p></div>');
 	}
 }
 add_action('admin_notices','postExpirationAdminNotice');
@@ -640,17 +639,15 @@ function postExpiratorCronScheduleStatus() {
  * Reset all cron events for Post Expirator Plugin
  */
 function postExpiratorResetCronEvent() {
-	postExpiratorTimezoneSetup();
-
 	wp_clear_scheduled_hook('expirationdate_delete');
 	wp_clear_scheduled_hook('expirationdate_delete_');
 
 	if (postExpirator_is_wpmu()) {
 		global $current_blog;
 		wp_clear_scheduled_hook('expirationdate_delete_'.$current_blog->blog_id);
-		wp_schedule_event(mktime(date('H'),0,0,date('m'),date('d'),date('Y')), 'postexpiratorminute', 'expirationdate_delete_'.$current_blog->blog_id);
+		wp_schedule_event(current_time('timestamp'), 'postexpiratorminute', 'expirationdate_delete_'.$current_blog->blog_id);
 	} else {
-		wp_schedule_event(mktime(date('H'),0,0,date('m'),date('d'),date('Y')), 'postexpiratorminute', 'expirationdate_delete');
+		wp_schedule_event(current_time('timestamp'), 'postexpiratorminute', 'expirationdate_delete');
 	}
 }
 
@@ -907,12 +904,11 @@ function postexpirator_activate () {
 	if (get_option('expirationdateDisplayFooter') === false)	update_option('expirationdateDisplayFooter',0);
 	if (get_option('expirationdateCategory') === false)		update_option('expirationdateCategory',1);
 	if (get_option('expirationdateDebug') === false)		update_option('expirationdateDebug',0);
-	postExpiratorTimezoneSetup();
 
 	if (postExpirator_is_wpmu())
-		wp_schedule_event(mktime(date('H'),0,0,date('m'),date('d'),date('Y')), 'postexpiratorminute', 'expirationdate_delete_'.$current_blog->blog_id);
+		wp_schedule_event(current_time('timestamp'), 'postexpiratorminute', 'expirationdate_delete_'.$current_blog->blog_id);
 	else
-		wp_schedule_event(mktime(date('H'),0,0,date('m'),date('d'),date('Y')), 'postexpiratorminute', 'expirationdate_delete');
+		wp_schedule_event(current_time('timestamp'), 'postexpiratorminute', 'expirationdate_delete');
 }
 
 /**
