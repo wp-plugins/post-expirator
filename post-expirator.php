@@ -198,6 +198,7 @@ function expirationdate_meta_box($post) {
 		$defaulthour = date('H');
 		$defaultyear = date('Y');
 		$defaultminute = date('i');
+		$enabled = '';
 		$disabled = ' disabled="disabled"';
 		$categories = get_option('expirationdateCategoryDefaults');
 	} else {
@@ -206,9 +207,9 @@ function expirationdate_meta_box($post) {
 		$defaultyear = date('Y',$expirationdatets);
 		$defaulthour = date('H',$expirationdatets);
 		$defaultminute = date('i',$expirationdatets);
-		$categories = get_post_meta($post->ID,'_expiration-date-category',true);
 		$enabled = ' checked="checked"';
 		$disabled = '';
+		$categories = get_post_meta($post->ID,'_expiration-date-category',true);
 	}
 
 	$rv = array();
@@ -394,7 +395,7 @@ function postExpiratorMenuTabs($tab) {
  *
  */
 function postExpiratorMenu() {
-        $tab = $_GET['tab'];
+        $tab = isset($_GET['tab']) ? $_GET['tab'] : '';
 
 	echo '<div class="wrap">';
         echo '<h2>'.__('Post Expirator Options','post-expirator').'</h2>';
@@ -423,7 +424,7 @@ add_action('admin_menu', 'postExpiratorPluginMenu');
  */
 function postExpiratorMenuGeneral() {
 
-	if ($_POST['expirationdateSave']) {
+	if (isset($_POST['expirationdateSave']) && $_POST['expirationdateSave']) {
 		update_option('expirationdateExpiredPostStatus',$_POST['expired-post-status']);
 		update_option('expirationdateExpiredPageStatus',$_POST['expired-page-status']);
 		update_option('expirationdateDefaultDateFormat',$_POST['expired-default-date-format']);
@@ -461,6 +462,8 @@ function postExpiratorMenuGeneral() {
 	else if ($expireddisplayfooter == 1)
 		$expireddisplayfooterenabled = 'checked="checked"';
 	
+	$expiredcategorydisabled = '';
+	$expiredcategoryenabled = '';
 	if ($expiredcategory == 0)
 		$expiredcategorydisabled = 'checked="checked"';
 	else if ($expiredcategory == 1)
