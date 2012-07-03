@@ -49,8 +49,9 @@ This section describes how to install the plugin and get it working.
 
 * Tweaked error messages, removed clicks for reset cron event
 * Switched cron schedule functions to use "current_time('timestamp')"
-* Cleand up default values code
+* Cleaned up default values code
 * Added option to allow user to select any cron schedule (minute, hourly, twicedaily, daily) - including other defined schedules
+* Code cleanup - php notice
 
 **Version 1.6**
 
