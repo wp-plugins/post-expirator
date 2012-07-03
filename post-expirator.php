@@ -355,7 +355,7 @@ function expirationdate_update_post_meta($id) {
         $year = $_POST['expirationdate_year'];
         $hour = $_POST['expirationdate_hour'];
         $minute = $_POST['expirationdate_minute'];
-	$category = $_POST['expirationdate_category'];
+	$category = isset($_POST['expirationdate_category']) ? $_POST['expirationdate_category'] : 0;
 	if (isset($_POST['enable-expirationdate'])) {
 	        postExpiratorTimezoneSetup();
         	// Format Date
