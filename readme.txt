@@ -51,6 +51,7 @@ This section describes how to install the plugin and get it working.
 * Switched cron schedule functions to use "current_time('timestamp')"
 * Cleaned up default values code
 * Added option to allow user to select any cron schedule (minute, hourly, twicedaily, daily) - including other defined schedules
+* Added option to set default expiration duration - options are none, custom, or publish time
 * Code cleanup - php notice
 
 **Version 1.6**

@@ -26,6 +26,7 @@ define('POSTEXPIRATOR_FOOTERDISPLAY','0');
 define('POSTEXPIRATOR_CATEGORY','1');
 define('POSTEXPIRATOR_DEBUG','0');
 define('POSTEXPIRATOR_CRONSCHEDULE','postexpiratorminute');
+define('POSTEXPIRATOR_EXPIREDEFAULT','null');
 
 // Detect WPMU/MultiSite
 function postExpirator_is_wpmu() {
@@ -192,12 +193,28 @@ function expirationdate_meta_box($post) {
 	// Get default month
 	postExpiratorTimezoneSetup();
 	$expirationdatets = get_post_meta($post->ID,'expiration-date',true);
+	$default = '';
 	if (empty($expirationdatets)) {
-		$defaultmonth = date('F');
-		$defaultday = date('d');
-		$defaulthour = date('H');
-		$defaultyear = date('Y');
-		$defaultminute = date('i');
+		$default = get_option('expirationdateDefaultDate',POSTEXPIRATOR_EXPIREDEFAULT);
+		if ($default == 'null') {
+			$defaultmonth = date('F');
+			$defaultday = date('d');
+			$defaulthour = date('H');
+			$defaultyear = date('Y');
+			$defaultminute = date('i');
+
+		} elseif ($default == 'custom') {
+			$custom = get_option('expirationdateDefaultDateCustom');
+			if ($custom === false) $ts = time();
+			else $ts = strtotime($custom);
+			$defaultmonth = date('F',$ts);
+			$defaultday = date('d',$ts);
+			$defaulthour = date('H',$ts);
+			$defaultyear = date('Y',$ts);
+			$defaultminute = date('i',$ts);
+
+		} 
+
 		$enabled = '';
 		$disabled = ' disabled="disabled"';
 		$categories = get_option('expirationdateCategoryDefaults');
@@ -215,59 +232,64 @@ function expirationdate_meta_box($post) {
 	$rv = array();
 	$rv[] = '<p><input type="checkbox" name="enable-expirationdate" id="enable-expirationdate" value="checked"'.$enabled.' onclick="expirationdate_ajax_add_meta(\'enable-expirationdate\')" />';
 	$rv[] = '<label for="enable-expirationdate">'.__('Enable Post Expiration','post-expirator').'</label></p>';
-	$rv[] = '<table><tr>';
-	$rv[] = '<th style="text-align: left;">'.__('Year','post-expirator').'</th>';
-	$rv[] = '<th style="text-align: left;">'.__('Month','post-expirator').'</th>';
-	$rv[] = '<th style="text-align: left;">'.__('Day','post-expirator').'</th>';
-	$rv[] = '</tr><tr>';
-	$rv[] = '<td>';	
-	$rv[] = '<select name="expirationdate_year" id="expirationdate_year"'.$disabled.'>';
-	$currentyear = date('Y');
 
-	if ($defaultyear < $currentyear) $currentyear = $defaultyear;
+	if ($default == 'publish') {
+		$rv[] = '<em>'.__('The published date/time will be used as the expiration value','post-expirator').'</em><br/>';
+	} else {
+		$rv[] = '<table><tr>';
+		$rv[] = '<th style="text-align: left;">'.__('Year','post-expirator').'</th>';
+		$rv[] = '<th style="text-align: left;">'.__('Month','post-expirator').'</th>';
+		$rv[] = '<th style="text-align: left;">'.__('Day','post-expirator').'</th>';
+		$rv[] = '</tr><tr>';
+		$rv[] = '<td>';	
+		$rv[] = '<select name="expirationdate_year" id="expirationdate_year"'.$disabled.'>';
+		$currentyear = date('Y');
+	
+		if ($defaultyear < $currentyear) $currentyear = $defaultyear;
 
-	for($i = $currentyear; $i < $currentyear + 8; $i++) {
-		if ($i == $defaultyear)
-			$selected = ' selected="selected"';
-		else
-			$selected = '';
-		$rv[] = '<option'.$selected.'>'.($i).'</option>';
+		for($i = $currentyear; $i < $currentyear + 8; $i++) {
+			if ($i == $defaultyear)
+				$selected = ' selected="selected"';
+			else
+				$selected = '';
+			$rv[] = '<option'.$selected.'>'.($i).'</option>';
+		}
+		$rv[] = '</select>';
+		$rv[] = '</td><td>';
+		$rv[] = '<select name="expirationdate_month" id="expirationdate_month"'.$disabled.'>';
+
+		for($i = 1; $i <= 12; $i++) {
+			if ($defaultmonth == date('F',mktime(0, 0, 0, $i, 1, date("Y"))))
+				$selected = ' selected="selected"';
+			else
+				$selected = '';
+			$rv[] = '<option value="'.date('m',mktime(0, 0, 0, $i, 1, date("Y"))).'"'.$selected.'>'.date_i18n('F',mktime(0, 0, 0, $i, 1, date("Y"))).'</option>';
+		}
+
+		$rv[] = '</select>';	 
+		$rv[] = '</td><td>';
+		$rv[] = '<input type="text" id="expirationdate_day" name="expirationdate_day" value="'.$defaultday.'" size="2"'.$disabled.' />,';
+		$rv[] = '</td></tr><tr>';
+		$rv[] = '<th style="text-align: left;"></th>';
+		$rv[] = '<th style="text-align: left;">'.__('Hour','post-expirator').'('.date('T',mktime(0, 0, 0, $i, 1, date("Y"))).')</th>';
+		$rv[] = '<th style="text-align: left;">'.__('Minute','post-expirator').'</th>';
+		$rv[] = '</tr><tr>';
+		$rv[] = '<td>@</td><td>';
+	 	$rv[] = '<select name="expirationdate_hour" id="expirationdate_hour"'.$disabled.'>';
+
+		for($i = 1; $i <= 24; $i++) {
+			if ($defaulthour == date('H',mktime($i, 0, 0, date("n"), date("j"), date("Y"))))
+				$selected = ' selected="selected"';
+			else
+				$selected = '';
+			$rv[] = '<option value="'.date('H',mktime($i, 0, 0, date("n"), date("j"), date("Y"))).'"'.$selected.'>'.date_i18n('H',mktime($i, 0, 0, date("n"), date("j"), date("Y"))).'</option>';
+		}
+
+		$rv[] = '</select></td><td>';
+		$rv[] = '<input type="text" id="expirationdate_minute" name="expirationdate_minute" value="'.$defaultminute.'" size="2"'.$disabled.' />';
+		$rv[] = '</td></tr></table>';
 	}
-	$rv[] = '</select>';
-	$rv[] = '</td><td>';
-	$rv[] = '<select name="expirationdate_month" id="expirationdate_month"'.$disabled.'>';
-
-	for($i = 1; $i <= 12; $i++) {
-		if ($defaultmonth == date('F',mktime(0, 0, 0, $i, 1, date("Y"))))
-			$selected = ' selected="selected"';
-		else
-			$selected = '';
-		$rv[] = '<option value="'.date('m',mktime(0, 0, 0, $i, 1, date("Y"))).'"'.$selected.'>'.date_i18n('F',mktime(0, 0, 0, $i, 1, date("Y"))).'</option>';
-	}
-
-	$rv[] = '</select>';	 
-	$rv[] = '</td><td>';
-	$rv[] = '<input type="text" id="expirationdate_day" name="expirationdate_day" value="'.$defaultday.'" size="2"'.$disabled.' />,';
-	$rv[] = '</td></tr><tr>';
-	$rv[] = '<th style="text-align: left;"></th>';
-	$rv[] = '<th style="text-align: left;">'.__('Hour','post-expirator').'('.date('T',mktime(0, 0, 0, $i, 1, date("Y"))).')</th>';
-	$rv[] = '<th style="text-align: left;">'.__('Minute','post-expirator').'</th>';
-	$rv[] = '</tr><tr>';
-	$rv[] = '<td>@</td><td>';
- 	$rv[] = '<select name="expirationdate_hour" id="expirationdate_hour"'.$disabled.'>';
-
-	for($i = 1; $i <= 24; $i++) {
-		if ($defaulthour == date('H',mktime($i, 0, 0, date("n"), date("j"), date("Y"))))
-			$selected = ' selected="selected"';
-		else
-			$selected = '';
-		$rv[] = '<option value="'.date('H',mktime($i, 0, 0, date("n"), date("j"), date("Y"))).'"'.$selected.'>'.date_i18n('H',mktime($i, 0, 0, date("n"), date("j"), date("Y"))).'</option>';
-	}
-
-	$rv[] = '</select></td><td>';
-	$rv[] = '<input type="text" id="expirationdate_minute" name="expirationdate_minute" value="'.$defaultminute.'" size="2"'.$disabled.' />';
 	$rv[] = '<input type="hidden" name="expirationdate_formcheck" value="true" />';
-	$rv[] = '</td></tr></table>';
 	echo implode("\n",$rv);
 
 	$catEnabled = get_option('expirationdateCategory');
@@ -301,22 +323,26 @@ function expirationdate_ajax_add_meta(expireenable) {
 
 	if (expire.checked == true) {
 		var enable = 'true';
-		document.getElementById('expirationdate_month').disabled = false;
-		document.getElementById('expirationdate_day').disabled = false;
-		document.getElementById('expirationdate_year').disabled = false;
-		document.getElementById('expirationdate_hour').disabled = false;
-		document.getElementById('expirationdate_minute').disabled = false;
+		if (document.getElementById('expirationdate_month')) {
+				document.getElementById('expirationdate_month').disabled = false;
+			document.getElementById('expirationdate_day').disabled = false;
+			document.getElementById('expirationdate_year').disabled = false;
+			document.getElementById('expirationdate_hour').disabled = false;
+			document.getElementById('expirationdate_minute').disabled = false;
+		}
 		var cats = document.getElementsByName('expirationdate_category[]');
 		var max = cats.length;
 		for (var i=0; i<max; i++) {
 			cats[i].disabled = '';
 		}
 	} else {
-		document.getElementById('expirationdate_month').disabled = true;
-		document.getElementById('expirationdate_day').disabled = true;
-		document.getElementById('expirationdate_year').disabled = true;
-		document.getElementById('expirationdate_hour').disabled = true;
-		document.getElementById('expirationdate_minute').disabled = true;
+		if (document.getElementById('expirationdate_month')) {
+			document.getElementById('expirationdate_month').disabled = true;
+			document.getElementById('expirationdate_day').disabled = true;
+			document.getElementById('expirationdate_year').disabled = true;
+			document.getElementById('expirationdate_hour').disabled = true;
+			document.getElementById('expirationdate_minute').disabled = true;
+		}
 		var cats = document.getElementsByName('expirationdate_category[]');
 		var max = cats.length;
 		for (var i=0; i<max; i++) {
@@ -326,6 +352,14 @@ function expirationdate_ajax_add_meta(expireenable) {
 	}
 	
 	return true;
+}
+function expirationdate_toggle_defaultdate(id) {
+	if (id.options[id.selectedIndex].value == 'custom') {
+		jQuery('#expired-custom-container').show();
+	} else {
+		jQuery('#expired-custom-container').hide();
+	}
+
 }
 //]]>
 </script>
@@ -350,11 +384,20 @@ function expirationdate_update_post_meta($id) {
 	if (!isset($_POST['expirationdate_formcheck']))
 		return false;
 
-        $month = $_POST['expirationdate_month'];
-        $day = $_POST['expirationdate_day'];
-        $year = $_POST['expirationdate_year'];
-        $hour = $_POST['expirationdate_hour'];
-        $minute = $_POST['expirationdate_minute'];
+        $default = get_option('expirationdateDefaultDate',POSTEXPIRATOR_EXPIREDEFAULT);
+	if ($default == 'publish') {
+	        $month = $_POST['mm'];
+        	$day = $_POST['jj'];
+	        $year = $_POST['aa'];
+        	$hour = $_POST['hh'];
+	        $minute = $_POST['mn'];
+	} else {
+	        $month = $_POST['expirationdate_month'];
+        	$day = $_POST['expirationdate_day'];
+	        $year = $_POST['expirationdate_year'];
+        	$hour = $_POST['expirationdate_hour'];
+	        $minute = $_POST['expirationdate_minute'];
+	}
 	$category = isset($_POST['expirationdate_category']) ? $_POST['expirationdate_category'] : 0;
 	if (isset($_POST['enable-expirationdate'])) {
 	        postExpiratorTimezoneSetup();
@@ -435,6 +478,8 @@ function postExpiratorMenuGeneral() {
 		update_option('expirationdateCategory',$_POST['expired-category']);
 		update_option('expirationdateCategoryDefaults',$_POST['expirationdate_category']);
 		update_option('expirationdateCronSchedule',$_POST['expired-default-cron-schedule']);
+		update_option('expirationdateDefaultDate',$_POST['expired-default-expiration-date']);
+		if ($_POST['expired-custom-expiration-date']) update_option('expirationdateDefaultDateCustom',$_POST['expired-custom-expiration-date']);
 		postExpiratorResetCronEvent();
                 echo "<div id='message' class='updated fade'><p>";
                 _e('Saved Options!','post-expirator');
@@ -452,6 +497,8 @@ function postExpiratorMenuGeneral() {
 	$expirationdateFooterContents = get_option('expirationdateFooterContents',POSTEXPIRATOR_FOOTERCONTENTS);
 	$expirationdateFooterStyle = get_option('expirationdateFooterStyle',POSTEXPIRATOR_FOOTERSTYLE);
 	$expirationdateCronSchedule = get_option('expirationdateCronSchedule',POSTEXPIRATOR_CRONSCHEDULE);
+	$expirationdateDefaultDate = get_option('expirationdateDefaultDate',POSTEXPIRATOR_EXPIREDEFAULT);
+	$expirationdateDefaultDateCustom = get_option('expirationdateDefaultDateCustom');
 
 	$categories = get_option('expirationdateCategoryDefaults');
 
@@ -535,6 +582,24 @@ function postExpiratorMenuGeneral() {
 					</select>
 					<br/>
 					<?php _e('By default set to "postexpiratorminute" which fires every minute.','post-expirator'); ?>
+				</td>
+			</tr>
+			<tr valign-"top">
+				<th scope="row"><label for="expired-default-expiration-date"><?php _e('Default Expiration Date:','post-expirator');?></label></th>
+				<td>
+					<select name="expired-default-expiration-date" id="expired-default-expiration-date" onchange="expirationdate_toggle_defaultdate(this)">
+						<option value="null" <?php echo ($expirationdateDefaultDate == 'null') ? ' selected="selected"' : ''; ?>><?php _e('None','post-expirator');?></option>
+						<option value="custom" <?php echo ($expirationdateDefaultDate == 'custom') ? ' selected="selected"' : ''; ?>><?php _e('Custom','post-expirator');?></option>
+						<option value="publish" <?php echo ($expirationdateDefaultDate == 'publish') ? ' selected="selected"' : ''; ?>><?php _e('Post/Page Publish Time','post-expirator');?></option>
+					</select>
+					<br/>
+					<?php _e('Set the default expiration date to be used when created new posts and pages.  Defaults to none.','post-expirator'); ?>
+					<?php $show = ($expirationdateDefaultDate == 'custom') ? 'block' : 'none'; ?>
+					<div id="expired-custom-container" style="display: <?php echo $show; ?>;">
+					<br/><label for="expired-custom-expiration-date">Custom:</label> <input type="text" value="<?php echo $expirationdateDefaultDateCustom; ?>" name="expired-custom-expiration-date" id="expired-custom-expiration-date" />
+					<br/>
+					<?php _e('Set the custom value to use for the default expiration date.  For information on formatting, see <a href="http://php.net/manual/en/function.strtotime.php">PHP strtotime function</a>.','post-expirator'); ?>
+					</div>
 				</td>
 			</tr>
 		</table>
@@ -873,8 +938,10 @@ function postexpirator_upgrade() {
 	} elseif ($version !== POSTEXPIRATOR_VERSION) {
 		switch (POSTEXPIRATOR_VERSION) {
 			case '1.6.1':
-				update_option('postexpiratorVersion',POSTEXPIRATOR_VERSION);		
+				update_option('postexpiratorVersion',POSTEXPIRATOR_VERSION);
+				update_option('expirationdateDefaultDate',POSTEXPIRATOR_EXPIREDEFAULT);
 				break;
+			
 		}
 	}
 }
@@ -893,6 +960,7 @@ function postexpirator_activate () {
 	if (get_option('expirationdateDisplayFooter') === false)	update_option('expirationdateDisplayFooter',POSTEXPIRATOR_FOOTERDISPLAY);
 	if (get_option('expirationdateCategory') === false)		update_option('expirationdateCategory',POSTEXPIRATOR_CATEGORY);
 	if (get_option('expirationdateDebug') === false)		update_option('expirationdateDebug',POSTEXPIRATOR_DEBUG);
+	if (get_option('expirationdateDefaultDate') === false)		update_option('expirationdateDefaultDate',POSTEXPIRATOR_EXPIREDEFAULT);
 
 	if (postExpirator_is_wpmu()) {
 		global $current_blog;
@@ -918,6 +986,8 @@ function expirationdate_deactivate () {
 	delete_option('expirationdateDebug');
 	delete_option('postexpiratorVersion');
 	delete_option('expirationdateCronSchedule');
+	delete_option('expirationdateDefaultDate');
+	delete_option('expirationdateDefaultDateCustom');
 	if (postExpirator_is_wpmu())
 		wp_clear_scheduled_hook('expirationdate_delete_'.$current_blog->blog_id);
 	else
