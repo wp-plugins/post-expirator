@@ -142,6 +142,9 @@ NOTE: After upgrading, you may need to reset the cron schedules.  Following onsc
 
 == Upgrade Notice ==
 
+= 1.6.1 =
+Tweaked error messages, added option to allow user to select cron schedule and set default exiration duration
+
 = 1.6 =
 Fixed invalid html
 Fixed i18n issues with dates

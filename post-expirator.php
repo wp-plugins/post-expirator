@@ -11,8 +11,12 @@ Text Domain: post-expirator
 */
 
 /* Load translation, if it exists */
-$plugin_dir = basename(dirname(__FILE__));
-load_plugin_textdomain( 'post-expirator', null, $plugin_dir.'/languages/' );
+function postExpirator_init() {
+	$plugin_dir = basename(dirname(__FILE__));
+	load_plugin_textdomain( 'post-expirator', null, $plugin_dir.'/languages/' );
+}
+add_action('plugins_loaded', 'postExpirator_init');
+
 
 // Default Values
 define('POSTEXPIRATOR_VERSION','1.6');
@@ -585,7 +589,7 @@ function postExpiratorMenuGeneral() {
 				</td>
 			</tr>
 			<tr valign-"top">
-				<th scope="row"><label for="expired-default-expiration-date"><?php _e('Default Expiration Date:','post-expirator');?></label></th>
+				<th scope="row"><label for="expired-default-expiration-date"><?php _e('Default Date/Time Duration:','post-expirator');?></label></th>
 				<td>
 					<select name="expired-default-expiration-date" id="expired-default-expiration-date" onchange="expirationdate_toggle_defaultdate(this)">
 						<option value="null" <?php echo ($expirationdateDefaultDate == 'null') ? ' selected="selected"' : ''; ?>><?php _e('None','post-expirator');?></option>
@@ -593,7 +597,7 @@ function postExpiratorMenuGeneral() {
 						<option value="publish" <?php echo ($expirationdateDefaultDate == 'publish') ? ' selected="selected"' : ''; ?>><?php _e('Post/Page Publish Time','post-expirator');?></option>
 					</select>
 					<br/>
-					<?php _e('Set the default expiration date to be used when created new posts and pages.  Defaults to none.','post-expirator'); ?>
+					<?php _e('Set the default expiration date to be used when creating new posts and pages.  Defaults to none.','post-expirator'); ?>
 					<?php $show = ($expirationdateDefaultDate == 'custom') ? 'block' : 'none'; ?>
 					<div id="expired-custom-container" style="display: <?php echo $show; ?>;">
 					<br/><label for="expired-custom-expiration-date">Custom:</label> <input type="text" value="<?php echo $expirationdateDefaultDateCustom; ?>" name="expired-custom-expiration-date" id="expired-custom-expiration-date" />
