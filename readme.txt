@@ -22,6 +22,8 @@ default display format.  See the [PHP Date Function](http://us2.php.net/manual/e
 
 Plugin homepage [WordPress Post Expirator](http://postexpirator.tuxdocs.net).
 
+New! [Feature Requests](http://postexpirator.uservoice.com) Please enter all feature requests here.  Requests entered via the plugin website or support forum may be missed.
+
 **[postexpirator] shortcode attributes**
 
 * type - defaults to full - valid options are full,date,time
