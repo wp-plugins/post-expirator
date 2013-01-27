@@ -47,6 +47,12 @@ This section describes how to install the plugin and get it working.
 
 == Changelog ==
 
+**Version 1.6.2**
+
+* Added the ability to configure the post expirator to be enabled by default for all new posts
+* Changed some instances of mktime to time
+* Fixed missing global call for MS installs
+
 **Version 1.6.1**
 
 * Tweaked error messages, removed clicks for reset cron event

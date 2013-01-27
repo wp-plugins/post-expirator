@@ -28,6 +28,7 @@ define('POSTEXPIRATOR_POSTSTATUS','Draft');
 define('POSTEXPIRATOR_PAGESTATUS','Draft');
 define('POSTEXPIRATOR_FOOTERDISPLAY','0');
 define('POSTEXPIRATOR_CATEGORY','1');
+define('POSTEXPIRATOR_AUTOENABLE','0');
 define('POSTEXPIRATOR_DEBUG','0');
 define('POSTEXPIRATOR_CRONSCHEDULE','postexpiratorminute');
 define('POSTEXPIRATOR_EXPIREDEFAULT','null');
@@ -223,6 +224,12 @@ function expirationdate_meta_box($post) {
 		$enabled = '';
 		$disabled = ' disabled="disabled"';
 		$categories = get_option('expirationdateCategoryDefaults');
+
+	        $expiredauto = get_option('expirationdateAutoEnabled',POSTEXPIRATOR_AUTOENABLE);
+		if ($expiredauto === true || $expiredauto == 1) { 
+			$enabled = ' checked="checked"'; 
+			$disabled='';
+		} 
 	} else {
 		$defaultmonth = date('F',$expirationdatets);
 		$defaultday = date('d',$expirationdatets);
@@ -484,6 +491,7 @@ function postExpiratorMenuGeneral() {
 		update_option('expirationdateCategoryDefaults',$_POST['expirationdate_category']);
 		update_option('expirationdateCronSchedule',$_POST['expired-default-cron-schedule']);
 		update_option('expirationdateDefaultDate',$_POST['expired-default-expiration-date']);
+		update_option('expirationdateAutoEnabled',$_POST['expired-auto-enable']);
 		if ($_POST['expired-custom-expiration-date']) update_option('expirationdateDefaultDateCustom',$_POST['expired-custom-expiration-date']);
 		postExpiratorResetCronEvent();
                 echo "<div id='message' class='updated fade'><p>";
@@ -498,6 +506,7 @@ function postExpiratorMenuGeneral() {
 	$expirationdateDefaultDateFormat = get_option('expirationdateDefaultDateFormat',POSTEXPIRATOR_DATEFORMAT);
 	$expirationdateDefaultTimeFormat = get_option('expirationdateDefaultTimeFormat',POSTEXPIRATOR_TIMEFORMAT);
 	$expiredcategory = get_option('expirationdateCategory',POSTEXPIRATOR_CATEGORY);
+	$expiredauto = get_option('expirationdateAutoEnabled',POSTEXPIRATOR_AUTOENABLE);
 	$expireddisplayfooter = get_option('expirationdateDisplayFooter',POSTEXPIRATOR_FOOTERDISPLAY);
 	$expirationdateFooterContents = get_option('expirationdateFooterContents',POSTEXPIRATOR_FOOTERCONTENTS);
 	$expirationdateFooterStyle = get_option('expirationdateFooterStyle',POSTEXPIRATOR_FOOTERSTYLE);
@@ -521,6 +530,12 @@ function postExpiratorMenuGeneral() {
 	else if ($expiredcategory == 1)
 		$expiredcategoryenabled = 'checked="checked"';
 
+	$expiredautoenabled = '';
+	$expiredautodisabled = '';
+	if ($expiredauto == 0)
+		$expiredautodisabled = 'checked="checked"';
+	else if ($expiredauto == 1)
+		$expiredautoenabled= 'checked="checked"';
 
 	?>
 	<p>
@@ -557,6 +572,15 @@ function postExpiratorMenuGeneral() {
 					</select>	
 					<br/>
 					<?php _e('Select whether the page should be deleted or changed to a draft at expiration time.','post-expirator');?>
+				</td>
+			</tr>
+			<tr valign-"top">
+				<th scope="row"><label for="expired-auto-enable"><?php _e('Auto-Enable Post Expirator:','post-expirator');?></label></th>
+				<td>
+					<input type="radio" name="expired-auto-enable" id="expired-auto-enable-true" value="1" <?php echo $expiredautoenabled ?>/> <label for="expired-auto-enable-true"><?php _e('Enabled','post-expirator');?></label> 
+					<input type="radio" name="expired-auto-enable" id="expired-auto-enable-false" value="0" <?php echo $expiredautodisabled ?>/> <label for="expired-auto-enable-false"><?php _e('Disabled','post-expirator');?></label>
+					<br/>
+					<?php _e('Select whether the post expirator is enabled for all new posts.','post-expirator');?>
 				</td>
 			</tr>
 			<tr valign-"top">
