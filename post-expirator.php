@@ -100,15 +100,15 @@ function expirationdate_delete_expired_posts() {
 		require_once(plugin_dir_path(__FILE__).'post-expirator-debug.php');
 
 		$debug = new postExpiratorDebug();
-		$startts = mktime();
+		$startts = time();
 		$debug->save(array('timestamp' => $startts,'message' => 'START'));
 		$debug->save(array('timestamp' => $startts,'message' => 'SQL EXPIRE: '.$sql));
 	}
 
 	$processsql = 'select post_id from '.$wpdb->postmeta.' where meta_key = "_expiration-date-processed" AND meta_value = "1"';
-	if ($debugEnabled) $debug->save(array('timestamp' => mktime(),'message' => 'SQL PROCESSED: '.$processsql));
+	if ($debugEnabled) $debug->save(array('timestamp' => time(),'message' => 'SQL PROCESSED: '.$processsql));
 	$processresult = $wpdb->get_col($processsql);
-	if ($debugEnabled) $debug->save(array('timestamp' => mktime(),'message' => 'PROCESSED POST IDS: '.print_r($processresult,true)));
+	if ($debugEnabled) $debug->save(array('timestamp' => time(),'message' => 'PROCESSED POST IDS: '.print_r($processresult,true)));
 
   	if (!empty($result)) foreach ($result as $a) {
 		// Check to see if already proccessed
@@ -128,28 +128,29 @@ function expirationdate_delete_expired_posts() {
 		$cat = get_post_meta($a->post_id,'_expiration-date-category');
 	        if (($catEnabled === false || $catEnabled == 1) && (isset($cat) && !empty($cat[0]))) {
 			wp_update_post(array('ID' => $a->post_id, 'post_category' => $cat[0]));
-			if ($debugEnabled) $debug->save(array('timestamp' => mktime(),'message' => 'EXPIRE: ID:'.$a->post_id.' CATEGORY:'.print_r($cat[0],true)));
+			if ($debugEnabled) $debug->save(array('timestamp' => time(),'message' => 'EXPIRE: ID:'.$a->post_id.' CATEGORY:'.print_r($cat[0],true)));
 		} else {
 			if ($expiredStatus == 'delete') {
 				wp_delete_post($a->post_id);
-				if ($debugEnabled) $debug->save(array('timestamp' => mktime(),'message' => 'EXPIRE: ID:'.$a->post_id.' DELETE'));
+				if ($debugEnabled) $debug->save(array('timestamp' => time(),'message' => 'EXPIRE: ID:'.$a->post_id.' DELETE'));
 			} else {
 				wp_update_post(array('ID' => $a->post_id, 'post_status' => 'draft'));
         		        delete_post_meta($a->post_id, 'expiration-date');
        			        update_post_meta($a->post_id, 'expiration-date', $a->meta_value);
-				if ($debugEnabled) $debug->save(array('timestamp' => mktime(),'message' => 'EXPIRE: ID:'.$a->post_id.' DRAFT'));
+				if ($debugEnabled) $debug->save(array('timestamp' => time(),'message' => 'EXPIRE: ID:'.$a->post_id.' DRAFT'));
 			}
 		}
 
 		// Mark as Processed
 		update_post_meta($a->post_id, '_expiration-date-processed', 1);
-		if ($debugEnabled) $debug->save(array('timestamp' => mktime(),'message' => 'PROCESSED: ID:'.$a->post_id));
+		if ($debugEnabled) $debug->save(array('timestamp' => time(),'message' => 'PROCESSED: ID:'.$a->post_id));
 	}
-	if ($debugEnabled) $debug->save(array('timestamp' => mktime(),'message' => 'END - DURATION: '.(mktime() - $startts)));
+	if ($debugEnabled) $debug->save(array('timestamp' => time(),'message' => 'END - DURATION: '.(time() - $startts)));
 }
-if (postExpirator_is_wpmu())
+if (postExpirator_is_wpmu()) {
+	global $current_blog;
 	add_action ('expirationdate_delete_'.$current_blog->blog_id, 'expirationdate_delete_expired_posts');
-else
+} else
 	add_action ('expirationdate_delete', 'expirationdate_delete_expired_posts');
 
 /**
@@ -1003,8 +1004,8 @@ function expirationdate_deactivate () {
 register_deactivation_hook (__FILE__, 'expirationdate_deactivate');
 
 class Walker_PostExpirator_Category_Checklist extends Walker {
-        var $tree_type = 'category';
-        var $db_fields = array ('parent' => 'parent', 'id' => 'term_id'); //TODO: decouple this
+	var $tree_type = 'category';
+	var $db_fields = array ('parent' => 'parent', 'id' => 'term_id'); //TODO: decouple this
 
 	var $disabled = '';
 
@@ -1012,29 +1013,28 @@ class Walker_PostExpirator_Category_Checklist extends Walker {
 		$this->disabled = 'disabled="disabled"';
 	}
 
-        function start_lvl(&$output, $depth, $args) {
-                $indent = str_repeat("\t", $depth);
-                $output .= "$indent<ul class='children'>\n";
-        }
+	function start_lvl(&$output, $depth, $args) {
+		$indent = str_repeat("\t", $depth);
+		$output .= "$indent<ul class='children'>\n";
+	}
 
-        function end_lvl(&$output, $depth, $args) {
-                $indent = str_repeat("\t", $depth);
-                $output .= "$indent</ul>\n";
-        }
+	function end_lvl(&$output, $depth, $args) {
+		$indent = str_repeat("\t", $depth);
+		$output .= "$indent</ul>\n";
+	}
 
-        function start_el(&$output, $category, $depth, $args) {
-                extract($args);
-                if ( empty($taxonomy) )
-                        $taxonomy = 'category';
+	function start_el(&$output, $category, $depth, $args) {
+		extract($args);
+		if ( empty($taxonomy) )
+			$taxonomy = 'category';
 
 		$name = 'expirationdate_category';
 
-                $class = in_array( $category->term_id, $popular_cats ) ? ' class="popular-category"' : '';
-                $output .= "\n<li id='{$taxonomy}-{$category->term_id}'$class>" . '<label class="selectit"><input value="' . $category->term_id . '" type="checkbox" name="'.$name.'[]" id="in-'.$taxonomy.'-' . $category->term_id . '"' . checked( in_array( $category->term_id, $selected_cats ), true, false ) . disabled( empty( $args['disabled'] ), false, false ) . ' '.$this->disabled.'/> ' . esc_html( apply_filters('the_category', $category->name )) . '</label>';
-        }
-
-        function end_el(&$output, $category, $depth, $args) {
-                $output .= "</li>\n";
-        }
+		$class = in_array( $category->term_id, $popular_cats ) ? ' class="popular-category"' : '';
+		$output .= "\n<li id='{$taxonomy}-{$category->term_id}'$class>" . '<label class="selectit"><input value="' . $category->term_id . '" type="checkbox" name="'.$name.'[]" id="in-'.$taxonomy.'-' . $category->term_id . '"' . checked( in_array( $category->term_id, $selected_cats ), true, false ) . disabled( empty( $args['disabled'] ), false, false ) . ' '.$this->disabled.'/> ' . esc_html( apply_filters('the_category', $category->name )) . '</label>';
+	}
+	
+	function end_el(&$output, $category, $depth, $args) {
+		$output .= "</li>\n";
+	}
 }
-
