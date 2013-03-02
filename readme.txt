@@ -47,6 +47,22 @@ This section describes how to install the plugin and get it working.
 
 == Changelog ==
 
+**Version 2.0**
+
+This is a major update of the core functions of this plugin.  All current plugins and settings should be upgraded to the new formats and work as expected.  Any posts currently schedule to be expirated in the future will be automatically upgraded to the new format.
+
+* New: Improved debug calls and logging
+* New: Added the ability to expire to a "private" post
+* New: Added the ability to expire by adding or removing categories.  The old way of doing things is now known as replacing categories
+* New: Revamped the expiration process - the plugin no longer runs on an minute, hourly, or other schedule.  Each expiration event schedules a unique event to run, conserving system resources and making things more efficient
+* New: The type of expiration event can be selected for each post, directly from the post editing screen
+* New: Ability to set defaults for each post type (including custom posts)
+* Change: Renamed expiration-date meta value to _expiration-date
+* Fix: Removed kses filter calls when then schedule task runs that was causing code entered as unfiltered_html to be removed
+* Fix: Updated some calls of date to now use date_i18n
+* Fix: Most (if not all) php error/warnings should be addressed
+* Fix: Updated wpdb calls in the debug class to use wpdb_prepare correctly
+
 **Version 1.6.2**
 
 * Added the ability to configure the post expirator to be enabled by default for all new posts
