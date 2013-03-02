@@ -17,7 +17,6 @@ function postExpirator_init() {
 }
 add_action('plugins_loaded', 'postExpirator_init');
 
-
 // Default Values
 define('POSTEXPIRATOR_VERSION','2.0.0-rc1');
 define('POSTEXPIRATOR_DATEFORMAT',__('l F jS, Y','post-expirator'));
@@ -28,17 +27,6 @@ define('POSTEXPIRATOR_FOOTERDISPLAY','0');
 define('POSTEXPIRATOR_CATEGORY','1');
 define('POSTEXPIRATOR_DEBUGDEFAULT','0');
 define('POSTEXPIRATOR_EXPIREDEFAULT','null');
-
-/**
- * Timezone Setup
- */
-function postExpiratorTimezoneSetup() {
-        if ( !$timezone_string = get_option( 'timezone_string' ) ) {
-                return false;
-        }
-
-	@date_default_timezone_set($timezone_string);
-}
 
 function postExpirator_plugin_action_links($links, $file) {
     $this_plugin = basename(plugin_dir_url(__FILE__)) . '/post-expirator.php';
@@ -75,9 +63,9 @@ function expirationdate_show_value ($column_name) {
 	global $post;
 	$id = $post->ID;
 	if ($column_name === 'expirationdate') {
-	        postExpiratorTimezoneSetup();
+		$offset = (int) get_option('gmt_offset') * 3600;
 		$ed = get_post_meta($id,'_expiration-date',true);
-    		echo ($ed ? date_i18n('Y/m/d H:i',$ed) : __("Never",'post-expirator'));
+    		echo ($ed ? date_i18n('Y/m/d H:i',$ed+$offset) : __("Never",'post-expirator'));
   	}
 }
 add_action ('manage_posts_custom_column', 'expirationdate_show_value');
@@ -100,9 +88,9 @@ add_action ('add_meta_boxes','expirationdate_meta_custom');
  */
 function expirationdate_meta_box($post) { 
 	// Get default month
-	postExpiratorTimezoneSetup();
 	$expirationdatets = get_post_meta($post->ID,'_expiration-date',true);
 	$firstsave = get_post_meta($post->ID,'_expiration-date-status',true);
+        $offset = (int) get_option('gmt_offset') * 3600;
 	$default = '';
 	$expireType = '';
 	if (empty($expirationdatets)) {
@@ -110,21 +98,22 @@ function expirationdate_meta_box($post) {
 
 		$default = get_option('expirationdateDefaultDate',POSTEXPIRATOR_EXPIREDEFAULT);
 		if ($default == 'null') {
-			$defaultmonth = date('F');
-			$defaultday = date('d');
-			$defaulthour = date('H');
-			$defaultyear = date('Y');
-			$defaultminute = date('i');
+			$defaultmonth = 	date_i18n('F');
+			$defaultday = 		date_i18n('d');
+			$defaulthour = 		date_i18n('H');
+			$defaultyear = 		date_i18n('Y');
+			$defaultminute = 	date_i18n('i');
 
 		} elseif ($default == 'custom') {
 			$custom = get_option('expirationdateDefaultDateCustom');
 			if ($custom === false) $ts = time();
 			else $ts = strtotime($custom);
-			$defaultmonth = date('F',$ts);
-			$defaultday = date('d',$ts);
-			$defaulthour = date('H',$ts);
-			$defaultyear = date('Y',$ts);
-			$defaultminute = date('i',$ts);
+			$ts = $ts + $offset;
+			$defaultmonth = 	date('F',$ts);
+			$defaultday = 		date('d',$ts);
+			$defaulthour = 		date('H',$ts);
+			$defaultyear = 		date('Y',$ts);
+			$defaultminute = 	date('i',$ts);
 
 		} 
 
@@ -141,11 +130,11 @@ function expirationdate_meta_box($post) {
 			$disabled='';
 		} 
 	} else {
-		$defaultmonth = date('F',$expirationdatets);
-		$defaultday = date('d',$expirationdatets);
-		$defaultyear = date('Y',$expirationdatets);
-		$defaulthour = date('H',$expirationdatets);
-		$defaultminute = date('i',$expirationdatets);
+		$defaultmonth = date('F',$expirationdatets+$offset);
+		$defaultday = date('d',$expirationdatets+$offset);
+		$defaultyear = date('Y',$expirationdatets+$offset);
+		$defaulthour = date('H',$expirationdatets+$offset);
+		$defaultminute = date('i',$expirationdatets+$offset);
 		$enabled = ' checked="checked"';
 		$disabled = '';
 		$opts = get_post_meta($post->ID,'_expiration-date-options',true);
@@ -185,11 +174,11 @@ function expirationdate_meta_box($post) {
 		$rv[] = '<select name="expirationdate_month" id="expirationdate_month"'.$disabled.'>';
 
 		for($i = 1; $i <= 12; $i++) {
-			if ($defaultmonth == date('F',mktime(0, 0, 0, $i, 1, date("Y"))))
+			if ($defaultmonth == date_i18n('F',mktime(0, 0, 0, $i, 1, date_i18n('Y'))))
 				$selected = ' selected="selected"';
 			else
 				$selected = '';
-			$rv[] = '<option value="'.date('m',mktime(0, 0, 0, $i, 1, date("Y"))).'"'.$selected.'>'.date_i18n('F',mktime(0, 0, 0, $i, 1, date("Y"))).'</option>';
+			$rv[] = '<option value="'.date_i18n('m',mktime(0, 0, 0, $i, 1, date_i18n('Y'))).'"'.$selected.'>'.date_i18n('F',mktime(0, 0, 0, $i, 1, date_i18n('Y'))).'</option>';
 		}
 
 		$rv[] = '</select>';	 
@@ -197,18 +186,18 @@ function expirationdate_meta_box($post) {
 		$rv[] = '<input type="text" id="expirationdate_day" name="expirationdate_day" value="'.$defaultday.'" size="2"'.$disabled.' />,';
 		$rv[] = '</td></tr><tr>';
 		$rv[] = '<th style="text-align: left;"></th>';
-		$rv[] = '<th style="text-align: left;">'.__('Hour','post-expirator').'('.date('T',mktime(0, 0, 0, $i, 1, date("Y"))).')</th>';
+		$rv[] = '<th style="text-align: left;">'.__('Hour','post-expirator').'('.date_i18n('T',mktime(0, 0, 0, $i, 1, date_i18n('Y'))).')</th>';
 		$rv[] = '<th style="text-align: left;">'.__('Minute','post-expirator').'</th>';
 		$rv[] = '</tr><tr>';
 		$rv[] = '<td>@</td><td>';
 	 	$rv[] = '<select name="expirationdate_hour" id="expirationdate_hour"'.$disabled.'>';
 
 		for($i = 1; $i <= 24; $i++) {
-			if ($defaulthour == date('H',mktime($i, 0, 0, date("n"), date("j"), date("Y"))))
+			if ($defaulthour == date_i18n('H',mktime($i, 0, 0, date_i18n('n'), date_i18n('j'), date_i18n('Y'))))
 				$selected = ' selected="selected"';
 			else
 				$selected = '';
-			$rv[] = '<option value="'.date('H',mktime($i, 0, 0, date("n"), date("j"), date("Y"))).'"'.$selected.'>'.date_i18n('H',mktime($i, 0, 0, date("n"), date("j"), date("Y"))).'</option>';
+			$rv[] = '<option value="'.date_i18n('H',mktime($i, 0, 0, date_i18n('n'), date_i18n('j'), date_i18n('Y'))).'"'.$selected.'>'.date_i18n('H',mktime($i, 0, 0, date_i18n('n'), date_i18n('j'), date_i18n('Y'))).'</option>';
 		}
 
 		$rv[] = '</select></td><td>';
@@ -357,8 +346,8 @@ function expirationdate_update_post_meta($id) {
 		$category = isset($_POST['expirationdate_category']) ? $_POST['expirationdate_category'] : 0;
 
 		$opts = array();
-        	postExpiratorTimezoneSetup();
-       		$ts = mktime($hour,$minute,0,$month,$day,$year); //Format Date
+                $offset = (int) get_option('gmt_offset') * 3600;
+       		$ts = gmmktime($hour,$minute,0,$month,$day,$year) - $offset; //Format Date
 
 		// Schedule/Update Expiration
 		$opts['expireType'] = $_POST['expirationdate_expiretype'];
@@ -593,7 +582,6 @@ function postExpiratorMenuGeneral() {
                 _e('Saved Options!','post-expirator');
                 echo "</p></div>";
 	}
-	postExpiratorTimezoneSetup();
 
 	// Get Option
 	$expirationdateDefaultDateFormat = get_option('expirationdateDefaultDateFormat',POSTEXPIRATOR_DATEFORMAT);
@@ -918,6 +906,9 @@ function postexpirator_shortcode($atts) {
 	if (empty($expirationdatets))
 		return false;
 
+	$offset = (int) get_option('gmt_offset') * 3600;
+	$expirationdatets = $expirationdatets + $offset;
+
 	extract(shortcode_atts(array(
 		'dateformat' => get_option('expirationdateDefaultDateFormat',POSTEXPIRATOR_DATEFORMAT),
 		'timeformat' => get_option('expirationdateDefaultTimeFormat',POSTEXPIRATOR_TIMEFORMAT),
@@ -942,8 +933,7 @@ function postexpirator_shortcode($atts) {
 	else if ($type == 'time')
 		$format = $timeformat;
 
-	postExpiratorTimezoneSetup();
-	return date("$format",$expirationdatets);
+	return date_i18n("$format",$expirationdatets);
 }
 add_shortcode('postexpirator', 'postexpirator_shortcode');
 
@@ -959,12 +949,14 @@ function postexpirator_add_footer($text) {
 	if (!is_numeric($expirationdatets))
 		return $text;
 
+	$offset = (int) get_option('gmt_offset') * 3600;
+	$expirationdatets = $expirationdatets + $offset;
+
         $dateformat = get_option('expirationdateDefaultDateFormat',POSTEXPIRATOR_DATEFORMAT);
         $timeformat = get_option('expirationdateDefaultTimeFormat',POSTEXPIRATOR_TIMEFORMAT);
         $expirationdateFooterContents = get_option('expirationdateFooterContents',POSTEXPIRATOR_FOOTERCONTENTS);
         $expirationdateFooterStyle = get_option('expirationdateFooterStyle',POSTEXPIRATOR_FOOTERSTYLE);
 	
-	postExpiratorTimezoneSetup();
 	$search = array(
 		'EXPIRATIONFULL',
 		'EXPIRATIONDATE',
