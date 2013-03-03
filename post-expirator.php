@@ -37,7 +37,6 @@ function postExpirator_plugin_action_links($links, $file) {
 }
 add_filter('plugin_action_links', 'postExpirator_plugin_action_links', 10, 2);
 
-
 /**
  * Add admin notice hook if cron schedule needs to be reset
  */
@@ -63,9 +62,8 @@ function expirationdate_show_value ($column_name) {
 	global $post;
 	$id = $post->ID;
 	if ($column_name === 'expirationdate') {
-		$offset = (int) get_option('gmt_offset') * 3600;
 		$ed = get_post_meta($id,'_expiration-date',true);
-    		echo ($ed ? date_i18n('Y/m/d H:i',$ed+$offset) : __("Never",'post-expirator'));
+    		echo ($ed ? postexpirator_get_date_from_gmt(date('Y-m-d H:i:s',$ed),'Y/m/d H:i') : __("Never",'post-expirator'));
   	}
 }
 add_action ('manage_posts_custom_column', 'expirationdate_show_value');
@@ -90,7 +88,6 @@ function expirationdate_meta_box($post) {
 	// Get default month
 	$expirationdatets = get_post_meta($post->ID,'_expiration-date',true);
 	$firstsave = get_post_meta($post->ID,'_expiration-date-status',true);
-        $offset = (int) get_option('gmt_offset') * 3600;
 	$default = '';
 	$expireType = '';
 	if (empty($expirationdatets)) {
@@ -98,23 +95,21 @@ function expirationdate_meta_box($post) {
 
 		$default = get_option('expirationdateDefaultDate',POSTEXPIRATOR_EXPIREDEFAULT);
 		if ($default == 'null') {
-			$defaultmonth = 	date_i18n('F');
-			$defaultday = 		date_i18n('d');
-			$defaulthour = 		date_i18n('H');
-			$defaultyear = 		date_i18n('Y');
-			$defaultminute = 	date_i18n('i');
+			$defaultmonth 	=	date_i18n('F');
+			$defaultday 	=	date_i18n('d');
+			$defaulthour 	=	date_i18n('H');
+			$defaultyear 	=	date_i18n('Y');
+			$defaultminute 	= 	date_i18n('i');
 
 		} elseif ($default == 'custom') {
 			$custom = get_option('expirationdateDefaultDateCustom');
 			if ($custom === false) $ts = time();
 			else $ts = strtotime($custom);
-			$ts = $ts + $offset;
-			$defaultmonth = 	date('F',$ts);
-			$defaultday = 		date('d',$ts);
-			$defaulthour = 		date('H',$ts);
-			$defaultyear = 		date('Y',$ts);
-			$defaultminute = 	date('i',$ts);
-
+			$defaultmonth 	=	postexpirator_get_date_from_gmt(date('Y-m-d H:i:s',$ts),'F');
+			$defaultday 	=	postexpirator_get_date_from_gmt(date('Y-m-d H:i:s',$ts),'d');
+			$defaultyear 	=	postexpirator_get_date_from_gmt(date('Y-m-d H:i:s',$ts),'Y');;
+			$defaulthour 	=	postexpirator_get_date_from_gmt(date('Y-m-d H:i:s',$ts),'H');
+			$defaultminute 	=	postexpirator_get_date_from_gmt(date('Y-m-d H:i:s',$ts),'i');
 		} 
 
 		$enabled = '';
@@ -130,14 +125,14 @@ function expirationdate_meta_box($post) {
 			$disabled='';
 		} 
 	} else {
-		$defaultmonth = date('F',$expirationdatets+$offset);
-		$defaultday = date('d',$expirationdatets+$offset);
-		$defaultyear = date('Y',$expirationdatets+$offset);
-		$defaulthour = date('H',$expirationdatets+$offset);
-		$defaultminute = date('i',$expirationdatets+$offset);
-		$enabled = ' checked="checked"';
-		$disabled = '';
-		$opts = get_post_meta($post->ID,'_expiration-date-options',true);
+		$defaultmonth 	=	postexpirator_get_date_from_gmt(date('Y-m-d H:i:s',$expirationdatets),'F');
+		$defaultday 	=	postexpirator_get_date_from_gmt(date('Y-m-d H:i:s',$expirationdatets),'d');
+		$defaultyear 	=	postexpirator_get_date_from_gmt(date('Y-m-d H:i:s',$expirationdatets),'Y');;
+		$defaulthour 	=	postexpirator_get_date_from_gmt(date('Y-m-d H:i:s',$expirationdatets),'H');
+		$defaultminute 	=	postexpirator_get_date_from_gmt(date('Y-m-d H:i:s',$expirationdatets),'i');
+		$enabled 	= 	' checked="checked"';
+		$disabled 	= 	'';
+		$opts 		= 	get_post_meta($post->ID,'_expiration-date-options',true);
 		if (isset($opts['expireType'])) {
                 	$expireType = $opts['expireType'];
 		}
@@ -346,8 +341,7 @@ function expirationdate_update_post_meta($id) {
 		$category = isset($_POST['expirationdate_category']) ? $_POST['expirationdate_category'] : 0;
 
 		$opts = array();
-                $offset = (int) get_option('gmt_offset') * 3600;
-       		$ts = gmmktime($hour,$minute,0,$month,$day,$year) - $offset; //Format Date
+		$ts = get_gmt_from_date("$year-$month-$day $hour:$minute:0",'U');
 
 		// Schedule/Update Expiration
 		$opts['expireType'] = $_POST['expirationdate_expiretype'];
@@ -906,13 +900,10 @@ function postexpirator_shortcode($atts) {
 	if (empty($expirationdatets))
 		return false;
 
-	$offset = (int) get_option('gmt_offset') * 3600;
-	$expirationdatets = $expirationdatets + $offset;
-
 	extract(shortcode_atts(array(
 		'dateformat' => get_option('expirationdateDefaultDateFormat',POSTEXPIRATOR_DATEFORMAT),
 		'timeformat' => get_option('expirationdateDefaultTimeFormat',POSTEXPIRATOR_TIMEFORMAT),
-		'type' => full,
+		'type' => 'full',
 		'tz' => date('T')
 	), $atts));
 
@@ -933,7 +924,7 @@ function postexpirator_shortcode($atts) {
 	else if ($type == 'time')
 		$format = $timeformat;
 
-	return date_i18n("$format",$expirationdatets);
+	return postexpirator_get_date_from_gmt(date_i18n('Y-m-d H:i:s',$expirationdatets),$format);
 }
 add_shortcode('postexpirator', 'postexpirator_shortcode');
 
@@ -949,9 +940,6 @@ function postexpirator_add_footer($text) {
 	if (!is_numeric($expirationdatets))
 		return $text;
 
-	$offset = (int) get_option('gmt_offset') * 3600;
-	$expirationdatets = $expirationdatets + $offset;
-
         $dateformat = get_option('expirationdateDefaultDateFormat',POSTEXPIRATOR_DATEFORMAT);
         $timeformat = get_option('expirationdateDefaultTimeFormat',POSTEXPIRATOR_TIMEFORMAT);
         $expirationdateFooterContents = get_option('expirationdateFooterContents',POSTEXPIRATOR_FOOTERCONTENTS);
@@ -963,9 +951,9 @@ function postexpirator_add_footer($text) {
 		'EXPIRATIONTIME'
 	);
 	$replace = array(
-		date_i18n("$dateformat $timeformat",$expirationdatets),
-		date_i18n("$dateformat",$expirationdatets),
-		date_i18n("$timeformat",$expirationdatets)
+		postexpirator_get_date_from_gmt(date_i18n('Y-m-d H:i:s',$expirationdatets),"$dateformat $timeformat"),
+		postexpirator_get_date_from_gmt(date_i18n('Y-m-d H:i:s',$expirationdatets),$dateformat),
+		postexpirator_get_date_from_gmt(date_i18n('Y-m-d H:i:s',$expirationdatets),$timeformat)
 	);
 
 	$add_to_footer = '<p style="'.$expirationdateFooterStyle.'">'.str_replace($search,$replace,$expirationdateFooterContents).'</p>';
@@ -1039,12 +1027,12 @@ function postexpirator_upgrade() {
                 	        	$opts['expireType'] = strtolower(get_option('expirationdateExpiredPostStatus','Draft'));
 				}
 
-				$cat = get_post_meta($id,'_expiration-date-category',true);			
+				$cat = get_post_meta($result->post_id,'_expiration-date-category',true);			
 				if ((isset($cat) && !empty($cat))) {
 					$opts['category'] = $cat;
 					$opts['expireType'] = 'category';
 				}
-				update_post_meta($id,'_expiration-date-options',$opts);
+				update_post_meta($result->post_id,'_expiration-date-options',$opts);
 			}
 
 			// update meta key to new format
@@ -1100,6 +1088,9 @@ function expirationdate_deactivate () {
 	delete_option('expirationdateDefaultDate');
 	delete_option('expirationdateDefaultDateCustom');
 	delete_option('expirationdateAutoEnabled');
+	delete_option('expirationdateDefaultsPage');
+	delete_option('expirationdateDefaultsPost');
+	## what about custom post types? - how to cleanup?
 	if (is_multisite())
 		wp_clear_scheduled_hook('expirationdate_delete_'.$current_blog->blog_id);
 	else
@@ -1166,4 +1157,21 @@ function _postExpiratorExpireType($opts) {
 	$rv[] = '<option value="category-remove" '. ($selected == 'category-remove' ? 'selected="selected"' : '') . '>'.__('Category: Remove','post-expirator').'</option>';
 	$rv[] = '</select>';
 	return implode("<br/>/n",$rv);
+}
+
+/**
+ * TEMPORARY FUNCTION UNTIL TICKET 20328 IS FIXED
+ */
+function postexpirator_get_date_from_gmt($string,$format = 'Y-m-d H:i:s') {
+	$tz = get_option('timezone_string');
+	if ( $tz ) {
+		$datetime = new DateTime( $string , new DateTimeZone('UTC') );
+		$datetime->setTimezone( new DateTimeZone($tz) );
+		$string_localtime = $datetime->format($format);
+	} else {
+		preg_match('#([0-9]{1,4})-([0-9]{1,2})-([0-9]{1,2}) ([0-9]{1,2}):([0-9]{1,2}):([0-9]{1,2})#', $string, $matches);
+		$string_time = gmmktime($matches[4], $matches[5], $matches[6], $matches[2], $matches[3], $matches[1]);
+		$string_localtime = gmdate($format, $string_time + get_option('gmt_offset')*3600);
+	}
+	return $string_localtime;
 }
