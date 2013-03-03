@@ -95,7 +95,7 @@ function expirationdate_meta_box($post) {
 
 		$default = get_option('expirationdateDefaultDate',POSTEXPIRATOR_EXPIREDEFAULT);
 		if ($default == 'null') {
-			$defaultmonth 	=	date_i18n('F');
+			$defaultmonth 	=	date_i18n('m');
 			$defaultday 	=	date_i18n('d');
 			$defaulthour 	=	date_i18n('H');
 			$defaultyear 	=	date_i18n('Y');
@@ -105,11 +105,11 @@ function expirationdate_meta_box($post) {
 			$custom = get_option('expirationdateDefaultDateCustom');
 			if ($custom === false) $ts = time();
 			else $ts = strtotime($custom);
-			$defaultmonth 	=	postexpirator_get_date_from_gmt(date('Y-m-d H:i:s',$ts),'F');
-			$defaultday 	=	postexpirator_get_date_from_gmt(date('Y-m-d H:i:s',$ts),'d');
-			$defaultyear 	=	postexpirator_get_date_from_gmt(date('Y-m-d H:i:s',$ts),'Y');;
-			$defaulthour 	=	postexpirator_get_date_from_gmt(date('Y-m-d H:i:s',$ts),'H');
-			$defaultminute 	=	postexpirator_get_date_from_gmt(date('Y-m-d H:i:s',$ts),'i');
+			$defaultmonth 	=	postexpirator_get_date_from_gmt(date_i18n('Y-m-d H:i:s',$ts),'m');
+			$defaultday 	=	postexpirator_get_date_from_gmt(date_i18n('Y-m-d H:i:s',$ts),'d');
+			$defaultyear 	=	postexpirator_get_date_from_gmt(date_i18n('Y-m-d H:i:s',$ts),'Y');;
+			$defaulthour 	=	postexpirator_get_date_from_gmt(date_i18n('Y-m-d H:i:s',$ts),'H');
+			$defaultminute 	=	postexpirator_get_date_from_gmt(date_i18n('Y-m-d H:i:s',$ts),'i');
 		} 
 
 		$enabled = '';
@@ -125,11 +125,11 @@ function expirationdate_meta_box($post) {
 			$disabled='';
 		} 
 	} else {
-		$defaultmonth 	=	postexpirator_get_date_from_gmt(date('Y-m-d H:i:s',$expirationdatets),'F');
-		$defaultday 	=	postexpirator_get_date_from_gmt(date('Y-m-d H:i:s',$expirationdatets),'d');
-		$defaultyear 	=	postexpirator_get_date_from_gmt(date('Y-m-d H:i:s',$expirationdatets),'Y');;
-		$defaulthour 	=	postexpirator_get_date_from_gmt(date('Y-m-d H:i:s',$expirationdatets),'H');
-		$defaultminute 	=	postexpirator_get_date_from_gmt(date('Y-m-d H:i:s',$expirationdatets),'i');
+		$defaultmonth 	=	postexpirator_get_date_from_gmt(date_i18n('Y-m-d H:i:s',$expirationdatets),'m');
+		$defaultday 	=	postexpirator_get_date_from_gmt(date_i18n('Y-m-d H:i:s',$expirationdatets),'d');
+		$defaultyear 	=	postexpirator_get_date_from_gmt(date_i18n('Y-m-d H:i:s',$expirationdatets),'Y');
+		$defaulthour 	=	postexpirator_get_date_from_gmt(date_i18n('Y-m-d H:i:s',$expirationdatets),'H');
+		$defaultminute 	=	postexpirator_get_date_from_gmt(date_i18n('Y-m-d H:i:s',$expirationdatets),'i');
 		$enabled 	= 	' checked="checked"';
 		$disabled 	= 	'';
 		$opts 		= 	get_post_meta($post->ID,'_expiration-date-options',true);
@@ -169,7 +169,7 @@ function expirationdate_meta_box($post) {
 		$rv[] = '<select name="expirationdate_month" id="expirationdate_month"'.$disabled.'>';
 
 		for($i = 1; $i <= 12; $i++) {
-			if ($defaultmonth == date_i18n('F',mktime(0, 0, 0, $i, 1, date_i18n('Y'))))
+			if ($defaultmonth == date_i18n('m',mktime(0, 0, 0, $i, 1, date_i18n('Y'))))
 				$selected = ' selected="selected"';
 			else
 				$selected = '';
