@@ -59,6 +59,7 @@ This is a major update of the core functions of this plugin.  All current plugin
 * New: Ability to set defaults for each post type (including custom posts)
 * New: Renamed expiration-date meta value to _expiration-date
 * New: Revamped timezone handling to be more correct with WordPress standards and fix conflicts with other plugins
+* New: 'Expires' column on post display table now uses the default date/time formats set for the blog
 * Fix: Removed kses filter calls when then schedule task runs that was causing code entered as unfiltered_html to be removed
 * Fix: Updated some calls of date to now use date_i18n
 * Fix: Most (if not all) php error/warnings should be addressed

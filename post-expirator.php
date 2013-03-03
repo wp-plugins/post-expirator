@@ -49,7 +49,7 @@ add_action('admin_notices','postExpirationAdminNotice');
  * adds an 'Expires' column to the post display table.
  */
 function expirationdate_add_column ($columns) {
-  	$columns['expirationdate'] = __('Expires','post-expirator').'<br/><span class="post-expirator-addcolumn">(YYYY/MM/DD HH:MM)</span>';
+  	$columns['expirationdate'] = __('Expires','post-expirator');
   	return $columns;
 }
 add_filter ('manage_posts_columns', 'expirationdate_add_column');
@@ -63,7 +63,7 @@ function expirationdate_show_value ($column_name) {
 	$id = $post->ID;
 	if ($column_name === 'expirationdate') {
 		$ed = get_post_meta($id,'_expiration-date',true);
-    		echo ($ed ? postexpirator_get_date_from_gmt(date('Y-m-d H:i:s',$ed),'Y/m/d H:i') : __("Never",'post-expirator'));
+    		echo ($ed ? postexpirator_get_date_from_gmt(date('Y-m-d H:i:s',$ed),get_option('date_format').' '.get_option('time_format')) : __("Never",'post-expirator'));
   	}
 }
 add_action ('manage_posts_custom_column', 'expirationdate_show_value');
