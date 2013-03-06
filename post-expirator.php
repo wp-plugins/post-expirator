@@ -553,7 +553,7 @@ function postExpiratorMenu() {
  * Hook's to add plugin page menu
  */
 function postExpiratorPluginMenu() {
-	add_submenu_page('options-general.php',__('Post Expirator Options','post-expirator'),__('Post Expirator','post-expirator'),'edit_plugins',basename(__FILE__),'postExpiratorMenu');
+	add_submenu_page('options-general.php',__('Post Expirator Options','post-expirator'),__('Post Expirator','post-expirator'),'manage_options',basename(__FILE__),'postExpiratorMenu');
 }
 add_action('admin_menu', 'postExpiratorPluginMenu');
 

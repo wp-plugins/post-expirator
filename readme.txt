@@ -64,6 +64,7 @@ This is a major update of the core functions of this plugin.  All current plugin
 * Fix: Updated some calls of date to now use date_i18n
 * Fix: Most (if not all) php error/warnings should be addressed
 * Fix: Updated wpdb calls in the debug class to use wpdb_prepare correctly
+* Fix: Changed menu capability option from "edit_plugin" to "manage_options"
 
 **Version 1.6.2**
 
