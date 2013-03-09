@@ -202,15 +202,17 @@ function expirationdate_meta_box($post) {
 	$rv[] = '<input type="hidden" name="expirationdate_formcheck" value="true" />';
 	echo implode("\n",$rv);
 
-	$catEnabled = get_option('expirationdateCategory');
-
 	echo '<br/>'.__('How to expire','post-expirator').': ';
 	echo _postExpiratorExpireType(array('name'=>'expirationdate_expiretype','selected'=>$expireType,'disabled'=>$disabled,'onchange' => 'expirationdate_toggle_category(this)'));
 	echo '<br/>';
 
-	if (($post->post_type != 'page') && ($catEnabled === false || $catEnabled == 1)) {
-		$args = array('hide_empty' => 0,'orderby' => 'name','hierarchical' => 0);
-		echo '<div id="expired-category-selection" style="display: none">';
+	if ($post->post_type != 'page') {
+		if (isset($expireType) && ($expireType == 'category' || $expireType == 'category-add' || $expireType == 'category-remove')) {
+			$catdisplay = 'block';
+		} else {
+			$catdisplay = 'none';
+		}
+		echo '<div id="expired-category-selection" style="display: $catdisplay">';
 		echo '<br/>'.__('Expiration Categories','post-expirator').':<br/>';
 
 		echo '<div class="wp-tab-panel" id="post-expirator-cat-list">';
@@ -220,8 +222,6 @@ function expirationdate_meta_box($post) {
 		wp_terms_checklist(0, array( 'taxonomy' => 'category', 'walker' => $walker, 'selected_cats' => $categories, 'checked_ontop' => false ) );
 		echo '</ul>';
 		echo '</div>';
-
-		echo '<p class="howto">'.__('Setting an expiration category will change the category at expiration time, and override the default post action','post-expirator').'.</p>';
 		echo '</div>';
 	}
 	echo '<div id="expirationdate_ajax_result"></div>';
