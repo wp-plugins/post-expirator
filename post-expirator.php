@@ -104,7 +104,14 @@ function expirationdate_meta_box($post) {
 		} elseif ($default == 'custom') {
 			$custom = get_option('expirationdateDefaultDateCustom');
 			if ($custom === false) $ts = time();
-			else $ts = strtotime($custom);
+			else {
+				$tz = get_option('timezone_string');
+				if ( $tz ) date_default_timezone_set( $tz );
+				
+				$ts = gmmktime() + (strtotime($custom) - time());
+				
+				if ( $tz ) date_default_timezone_set('UTC');
+			}
 			$defaultmonth 	=	postexpirator_get_date_from_gmt(date_i18n('Y-m-d H:i:s',$ts),'m');
 			$defaultday 	=	postexpirator_get_date_from_gmt(date_i18n('Y-m-d H:i:s',$ts),'d');
 			$defaultyear 	=	postexpirator_get_date_from_gmt(date_i18n('Y-m-d H:i:s',$ts),'Y');;
@@ -246,8 +253,8 @@ function expirationdate_ajax_add_meta(expireenable) {
 			document.getElementById('expirationdate_year').disabled = false;
 			document.getElementById('expirationdate_hour').disabled = false;
 			document.getElementById('expirationdate_minute').disabled = false;
-			document.getElementById('expirationdate_expiretype').disabled = false;
 		}
+		document.getElementById('expirationdate_expiretype').disabled = false;
 		var cats = document.getElementsByName('expirationdate_category[]');
 		var max = cats.length;
 		for (var i=0; i<max; i++) {
@@ -260,8 +267,8 @@ function expirationdate_ajax_add_meta(expireenable) {
 			document.getElementById('expirationdate_year').disabled = true;
 			document.getElementById('expirationdate_hour').disabled = true;
 			document.getElementById('expirationdate_minute').disabled = true;
-			document.getElementById('expirationdate_expiretype').disabled = true;
 		}
+		document.getElementById('expirationdate_expiretype').disabled = true;
 		var cats = document.getElementsByName('expirationdate_category[]');
 		var max = cats.length;
 		for (var i=0; i<max; i++) {
