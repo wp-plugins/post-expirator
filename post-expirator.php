@@ -24,7 +24,6 @@ define('POSTEXPIRATOR_TIMEFORMAT',__('g:ia','post-expirator'));
 define('POSTEXPIRATOR_FOOTERCONTENTS',__('Post expires at EXPIRATIONTIME on EXPIRATIONDATE','post-expirator'));
 define('POSTEXPIRATOR_FOOTERSTYLE','font-style: italic;');
 define('POSTEXPIRATOR_FOOTERDISPLAY','0');
-define('POSTEXPIRATOR_CATEGORY','1');
 define('POSTEXPIRATOR_DEBUGDEFAULT','0');
 define('POSTEXPIRATOR_EXPIREDEFAULT','null');
 
@@ -219,7 +218,7 @@ function expirationdate_meta_box($post) {
 		} else {
 			$catdisplay = 'none';
 		}
-		echo '<div id="expired-category-selection" style="display: $catdisplay">';
+		echo '<div id="expired-category-selection" style="display: '.$catdisplay.'">';
 		echo '<br/>'.__('Expiration Categories','post-expirator').':<br/>';
 
 		echo '<div class="wp-tab-panel" id="post-expirator-cat-list">';
@@ -575,7 +574,6 @@ function postExpiratorMenuGeneral() {
 		update_option('expirationdateDisplayFooter',$_POST['expired-display-footer']);
 		update_option('expirationdateFooterContents',$_POST['expired-footer-contents']);
 		update_option('expirationdateFooterStyle',$_POST['expired-footer-style']);
-		update_option('expirationdateCategory',$_POST['expired-category']);
 		if (isset($_POST['expirationdate_category'])) update_option('expirationdateCategoryDefaults',$_POST['expirationdate_category']);
 		update_option('expirationdateDefaultDate',$_POST['expired-default-expiration-date']);
 		if ($_POST['expired-custom-expiration-date']) update_option('expirationdateDefaultDateCustom',$_POST['expired-custom-expiration-date']);
@@ -587,7 +585,6 @@ function postExpiratorMenuGeneral() {
 	// Get Option
 	$expirationdateDefaultDateFormat = get_option('expirationdateDefaultDateFormat',POSTEXPIRATOR_DATEFORMAT);
 	$expirationdateDefaultTimeFormat = get_option('expirationdateDefaultTimeFormat',POSTEXPIRATOR_TIMEFORMAT);
-	$expiredcategory = get_option('expirationdateCategory',POSTEXPIRATOR_CATEGORY);
 	$expireddisplayfooter = get_option('expirationdateDisplayFooter',POSTEXPIRATOR_FOOTERDISPLAY);
 	$expirationdateFooterContents = get_option('expirationdateFooterContents',POSTEXPIRATOR_FOOTERCONTENTS);
 	$expirationdateFooterStyle = get_option('expirationdateFooterStyle',POSTEXPIRATOR_FOOTERSTYLE);
@@ -662,15 +659,6 @@ function postExpiratorMenuGeneral() {
 		</table>
 		<h3><?php _e('Category Expiration','post-expirator');?></h3>
 		<table class="form-table">
-			<tr valign-"top">
-				<th scope="row"><?php _e('Enable Post Expiration to Category?','post-expirator');?></th>
-				<td>
-					<input type="radio" name="expired-category" id="expired-category-true" value="1" <?php echo $expiredcategoryenabled ?>/> <label for="expired-category-true"><?php _e('Enabled','post-expirator');?></label> 
-					<input type="radio" name="expired-category" id="expired-category-false" value="0" <?php echo $expiredcategorydisabled ?>/> <label for="expired-category-false"><?php _e('Disabled','post-expirator');?></label>
-					<br/>
-					<?php _e('This will enable or disable the ability to expire a post to a category.','post-expirator');?>
-				</td>
-			</tr>
 			<tr valign-"top">
 				<th scope="row"><?php _e('Default Expiration Category','post-expirator');?>:</th>
 				<td>
@@ -1070,7 +1058,6 @@ function postexpirator_activate () {
 	if (get_option('expirationdateFooterContents') === false)	update_option('expirationdateFooterContents',POSTEXPIRATOR_FOOTERCONTENTS);
 	if (get_option('expirationdateFooterStyle') === false)		update_option('expirationdateFooterStyle',POSTEXPIRATOR_FOOTERSTYLE);
 	if (get_option('expirationdateDisplayFooter') === false)	update_option('expirationdateDisplayFooter',POSTEXPIRATOR_FOOTERDISPLAY);
-	if (get_option('expirationdateCategory') === false)		update_option('expirationdateCategory',POSTEXPIRATOR_CATEGORY);
 	if (get_option('expirationdateDebug') === false)		update_option('expirationdateDebug',POSTEXPIRATOR_DEBUGDEFAULT);
 	if (get_option('expirationdateDefaultDate') === false)		update_option('expirationdateDefaultDate',POSTEXPIRATOR_EXPIREDEFAULT);
 }
