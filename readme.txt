@@ -47,6 +47,11 @@ This section describes how to install the plugin and get it working.
 
 == Changelog ==
 
+**Version 2.0.1**
+
+* Removes old scheduled hook - this was not done completely in the 2.0.0 upgrade
+* Old option cleanup
+
 **Version 2.0.0**
 
 This is a major update of the core functions of this plugin.  All current plugins and settings should be upgraded to the new formats and work as expected.  Any posts currently schedule to be expirated in the future will be automatically upgraded to the new format.
