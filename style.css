@@ -21,3 +21,8 @@
 .post-expirator-timestamp {
 	width: 150px;
 }
+.post-expirator-taxonomy-name {
+	margin: 0px;
+	font-style: italic;
+	font-size: x-small;
+}

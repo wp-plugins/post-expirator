@@ -47,6 +47,14 @@ This section describes how to install the plugin and get it working.
 
 == Changelog ==
 
+**Version 2.1.0**
+
+* Added support for custom heirarchical custom taxonomy
+
+**Version 2.0.2**
+
+* Change to only show public custom post types on defaults screen
+
 **Version 2.0.1**
 
 * Removes old scheduled hook - this was not done completely in the 2.0.0 upgrade
