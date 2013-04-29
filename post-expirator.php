@@ -1024,11 +1024,11 @@ add_action('the_content','postexpirator_add_footer',0);
 function postExpiratorDebug() {
 	$debug = get_option('expirationdateDebug');
 	if ($debug == 1) {
-		define('POSTEXPIRATOR_DEBUG',1);
+		if (!defined('POSTEXPIRATOR_DEBUG')) define('POSTEXPIRATOR_DEBUG',1);
                 require_once(plugin_dir_path(__FILE__).'post-expirator-debug.php'); // Load Class
                 return new postExpiratorDebug();
 	} else {
-		define('POSTEXPIRATOR_DEBUG',0);
+		if (!defined('POSTEXPIRATOR_DEBUG')) define('POSTEXPIRATOR_DEBUG',0);
 		return false;
 	}
 }

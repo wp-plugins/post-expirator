@@ -54,6 +54,7 @@ This section describes how to install the plugin and get it working.
 **Version 2.0.2**
 
 * Change to only show public custom post types on defaults screen
+* Update debug function to be friendly for scripted calls 
 
 **Version 2.0.1**
 
