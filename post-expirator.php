@@ -1219,9 +1219,11 @@ function _postExpiratorExpireType($opts) {
 	$rv[] = '<option value="draft" '. ($selected == 'draft' ? 'selected="selected"' : '') . '>'.__('Draft','post-expirator').'</option>';
 	$rv[] = '<option value="delete" '. ($selected == 'delete' ? 'selected="selected"' : '') . '>'.__('Delete','post-expirator').'</option>';
 	$rv[] = '<option value="private" '. ($selected == 'private' ? 'selected="selected"' : '') . '>'.__('Private','post-expirator').'</option>';
-	$rv[] = '<option value="category" '. ($selected == 'category' ? 'selected="selected"' : '') . '>'.__('Category: Replace','post-expirator').'</option>';
-	$rv[] = '<option value="category-add" '. ($selected == 'category-add' ? 'selected="selected"' : '') . '>'.__('Category: Add','post-expirator').'</option>';
-	$rv[] = '<option value="category-remove" '. ($selected == 'category-remove' ? 'selected="selected"' : '') . '>'.__('Category: Remove','post-expirator').'</option>';
+	if ($type != 'page') {
+		$rv[] = '<option value="category" '. ($selected == 'category' ? 'selected="selected"' : '') . '>'.__('Category: Replace','post-expirator').'</option>';
+		$rv[] = '<option value="category-add" '. ($selected == 'category-add' ? 'selected="selected"' : '') . '>'.__('Category: Add','post-expirator').'</option>';
+		$rv[] = '<option value="category-remove" '. ($selected == 'category-remove' ? 'selected="selected"' : '') . '>'.__('Category: Remove','post-expirator').'</option>';
+	}
 	$rv[] = '</select>';
 	return implode("<br/>/n",$rv);
 }

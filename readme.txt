@@ -50,11 +50,9 @@ This section describes how to install the plugin and get it working.
 **Version 2.1.0**
 
 * Added support for custom heirarchical custom taxonomy
-
-**Version 2.0.2**
-
-* Change to only show public custom post types on defaults screen
 * Update debug function to be friendly for scripted calls 
+* Change to only show public custom post types on defaults screen
+* Fixed issue that was displaying category expiration options for 'pages', which is currently unsupported
 
 **Version 2.0.1**
 
