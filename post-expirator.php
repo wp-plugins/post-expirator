@@ -62,7 +62,7 @@ function expirationdate_show_value ($column_name) {
 	$id = $post->ID;
 	if ($column_name === 'expirationdate') {
 		$ed = get_post_meta($id,'_expiration-date',true);
-    		echo ($ed ? postexpirator_get_date_from_gmt(date('Y-m-d H:i:s',$ed),get_option('date_format').' '.get_option('time_format')) : __("Never",'post-expirator'));
+    		echo ($ed ? postexpirator_get_date_from_gmt(gmdate('Y-m-d H:i:s',$ed),get_option('date_format').' '.get_option('time_format')) : __("Never",'post-expirator'));
   	}
 }
 add_action ('manage_posts_custom_column', 'expirationdate_show_value');
@@ -110,11 +110,11 @@ function expirationdate_meta_box($post) {
 				
 				if ( $tz ) date_default_timezone_set('UTC');
 			}
-			$defaultmonth 	=	postexpirator_get_date_from_gmt(date_i18n('Y-m-d H:i:s',$ts),'m');
-			$defaultday 	=	postexpirator_get_date_from_gmt(date_i18n('Y-m-d H:i:s',$ts),'d');
-			$defaultyear 	=	postexpirator_get_date_from_gmt(date_i18n('Y-m-d H:i:s',$ts),'Y');;
-			$defaulthour 	=	postexpirator_get_date_from_gmt(date_i18n('Y-m-d H:i:s',$ts),'H');
-			$defaultminute 	=	postexpirator_get_date_from_gmt(date_i18n('Y-m-d H:i:s',$ts),'i');
+			$defaultmonth 	=	postexpirator_get_date_from_gmt(gmdate('Y-m-d H:i:s',$ts),'m');
+			$defaultday 	=	postexpirator_get_date_from_gmt(gmdate('Y-m-d H:i:s',$ts),'d');
+			$defaultyear 	=	postexpirator_get_date_from_gmt(gmdate('Y-m-d H:i:s',$ts),'Y');;
+			$defaulthour 	=	postexpirator_get_date_from_gmt(gmdate('Y-m-d H:i:s',$ts),'H');
+			$defaultminute 	=	postexpirator_get_date_from_gmt(gmdate('Y-m-d H:i:s',$ts),'i');
 		} 
 
 		$enabled = '';
@@ -130,11 +130,11 @@ function expirationdate_meta_box($post) {
 			$disabled='';
 		} 
 	} else {
-		$defaultmonth 	=	postexpirator_get_date_from_gmt(date_i18n('Y-m-d H:i:s',$expirationdatets),'m');
-		$defaultday 	=	postexpirator_get_date_from_gmt(date_i18n('Y-m-d H:i:s',$expirationdatets),'d');
-		$defaultyear 	=	postexpirator_get_date_from_gmt(date_i18n('Y-m-d H:i:s',$expirationdatets),'Y');
-		$defaulthour 	=	postexpirator_get_date_from_gmt(date_i18n('Y-m-d H:i:s',$expirationdatets),'H');
-		$defaultminute 	=	postexpirator_get_date_from_gmt(date_i18n('Y-m-d H:i:s',$expirationdatets),'i');
+		$defaultmonth 	=	postexpirator_get_date_from_gmt(gmdate('Y-m-d H:i:s',$expirationdatets),'m');
+		$defaultday 	=	postexpirator_get_date_from_gmt(gmdate('Y-m-d H:i:s',$expirationdatets),'d');
+		$defaultyear 	=	postexpirator_get_date_from_gmt(gmdate('Y-m-d H:i:s',$expirationdatets),'Y');
+		$defaulthour 	=	postexpirator_get_date_from_gmt(gmdate('Y-m-d H:i:s',$expirationdatets),'H');
+		$defaultminute 	=	postexpirator_get_date_from_gmt(gmdate('Y-m-d H:i:s',$expirationdatets),'i');
 		$enabled 	= 	' checked="checked"';
 		$disabled 	= 	'';
 		$opts 		= 	get_post_meta($post->ID,'_expiration-date-options',true);
@@ -795,7 +795,7 @@ function postExpiratorMenuDefaults() {
         <form method="post">
                 <h3><?php _e('Default Expiration Values','post-expirator');?></h3>
 		<p>
-		<?php _e('Use the values below to set the default actions/values to be used for each for the corresponding post types.  These values can all be overwridden when creating/editing the post/page.','post-expirator'); ?>
+		<?php _e('Use the values below to set the default actions/values to be used for each for the corresponding post types.  These values can all be overwritten when creating/editing the post/page.','post-expirator'); ?>
 		</p>
 		<?php
 		foreach ($types as $type) {
@@ -981,7 +981,7 @@ function postexpirator_shortcode($atts) {
 	else if ($type == 'time')
 		$format = $timeformat;
 
-	return postexpirator_get_date_from_gmt(date_i18n('Y-m-d H:i:s',$expirationdatets),$format);
+	return postexpirator_get_date_from_gmt(gmdate('Y-m-d H:i:s',$expirationdatets),$format);
 }
 add_shortcode('postexpirator', 'postexpirator_shortcode');
 
@@ -1008,9 +1008,9 @@ function postexpirator_add_footer($text) {
 		'EXPIRATIONTIME'
 	);
 	$replace = array(
-		postexpirator_get_date_from_gmt(date_i18n('Y-m-d H:i:s',$expirationdatets),"$dateformat $timeformat"),
-		postexpirator_get_date_from_gmt(date_i18n('Y-m-d H:i:s',$expirationdatets),$dateformat),
-		postexpirator_get_date_from_gmt(date_i18n('Y-m-d H:i:s',$expirationdatets),$timeformat)
+		postexpirator_get_date_from_gmt(gmdate('Y-m-d H:i:s',$expirationdatets),"$dateformat $timeformat"),
+		postexpirator_get_date_from_gmt(gmdate('Y-m-d H:i:s',$expirationdatets),$dateformat),
+		postexpirator_get_date_from_gmt(gmdate('Y-m-d H:i:s',$expirationdatets),$timeformat)
 	);
 
 	$add_to_footer = '<p style="'.$expirationdateFooterStyle.'">'.str_replace($search,$replace,$expirationdateFooterContents).'</p>';
