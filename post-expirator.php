@@ -4,7 +4,7 @@ Plugin Name: Post Expirator
 Plugin URI: http://wordpress.org/extend/plugins/post-expirator/
 Description: Allows you to add an expiration date (minute) to posts which you can configure to either delete the post, change it to a draft, or update the post categories at expiration time.
 Author: Aaron Axelsen
-Version: 2.0.1
+Version: 2.1.0
 Author URI: http://postexpirator.tuxdocs.net/
 Translation: Thierry (http://palijn.info)
 Text Domain: post-expirator
@@ -18,7 +18,7 @@ function postExpirator_init() {
 add_action('plugins_loaded', 'postExpirator_init');
 
 // Default Values
-define('POSTEXPIRATOR_VERSION','2.1.0-dev');
+define('POSTEXPIRATOR_VERSION','2.1.0');
 define('POSTEXPIRATOR_DATEFORMAT',__('l F jS, Y','post-expirator'));
 define('POSTEXPIRATOR_TIMEFORMAT',__('g:ia','post-expirator'));
 define('POSTEXPIRATOR_FOOTERCONTENTS',__('Post expires at EXPIRATIONTIME on EXPIRATIONDATE','post-expirator'));
@@ -1115,6 +1115,11 @@ function postexpirator_upgrade() {
                 		wp_clear_scheduled_hook('expirationdate_delete_'.$current_blog->blog_id);
 		        } else
                 		wp_clear_scheduled_hook('expirationdate_delete');
+			
+			update_option('postexpiratorVersion',POSTEXPIRATOR_VERSION);
+		}
+
+		if (version_compare($version,'2.1.0') == -1) {
 			
 			update_option('postexpiratorVersion',POSTEXPIRATOR_VERSION);
 		}
