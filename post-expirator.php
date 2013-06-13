@@ -831,7 +831,6 @@ function postExpiratorMenuDefaults() {
 			if (isset($defaults['activeMetaBox']) && $defaults['activeMetaBox'] == 'inactive') {
 				$expiredactivemetaenabled = '';
 				$expiredactivemetadisabled = 'checked = "checked"';
-#			} else if (!isset($defaults['activeMetaBox']) || (isset($defaults['activeMetaBox']) && $defaults['activeMetaBox'] == 'active')) {
 			} else {
 				$expiredactivemetaenabled = 'checked = "checked"';
 				$expiredactivemetadisabled = '';
