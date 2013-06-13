@@ -4,7 +4,7 @@ Plugin Name: Post Expirator
 Plugin URI: http://wordpress.org/extend/plugins/post-expirator/
 Description: Allows you to add an expiration date (minute) to posts which you can configure to either delete the post, change it to a draft, or update the post categories at expiration time.
 Author: Aaron Axelsen
-Version: 2.1.0
+Version: 2.1.1
 Author URI: http://postexpirator.tuxdocs.net/
 Translation: Thierry (http://palijn.info)
 Text Domain: post-expirator
@@ -18,7 +18,7 @@ function postExpirator_init() {
 add_action('plugins_loaded', 'postExpirator_init');
 
 // Default Values
-define('POSTEXPIRATOR_VERSION','2.1.0');
+define('POSTEXPIRATOR_VERSION','2.1.1');
 define('POSTEXPIRATOR_DATEFORMAT',__('l F jS, Y','post-expirator'));
 define('POSTEXPIRATOR_TIMEFORMAT',__('g:ia','post-expirator'));
 define('POSTEXPIRATOR_FOOTERCONTENTS',__('Post expires at EXPIRATIONTIME on EXPIRATIONDATE','post-expirator'));
@@ -47,12 +47,26 @@ add_action('admin_notices','postExpirationAdminNotice');
 /**
  * adds an 'Expires' column to the post display table.
  */
-function expirationdate_add_column ($columns) {
-  	$columns['expirationdate'] = __('Expires','post-expirator');
+function expirationdate_add_column ($columns,$type) {
+	$defaults = get_option('expirationdateDefaults'.ucfirst($type));
+	if (!isset($defaults['activeMetaBox']) || $defaults['activeMetaBox'] == 'active') {
+	  	$columns['expirationdate'] = __('Expires','post-expirator');
+	}
   	return $columns;
 }
-add_filter ('manage_posts_columns', 'expirationdate_add_column');
-add_filter ('manage_pages_columns', 'expirationdate_add_column');
+add_filter ('manage_posts_columns', 'expirationdate_add_column', 10, 2);
+
+/**
+ * adds an 'Expires' column to the page display table.
+ */
+function expirationdate_add_column_page ($columns) {
+	$defaults = get_option('expirationdateDefaultsPage');
+	if (!isset($defaults['activeMetaBox']) || $defaults['activeMetaBox'] == 'active') {
+	  	$columns['expirationdate'] = __('Expires','post-expirator');
+	}
+  	return $columns;
+}
+add_filter ('manage_pages_columns', 'expirationdate_add_column_page');
 
 /**
  * fills the 'Expires' column of the post display table.
@@ -73,10 +87,13 @@ add_action ('manage_pages_custom_column', 'expirationdate_show_value');
  */
 function expirationdate_meta_custom() {
 	$custom_post_types = get_post_types();
+	array_push($custom_post_types,'page');
 	foreach ($custom_post_types as $t) {
-		add_meta_box('expirationdatediv', __('Post Expirator','post-expirator'), 'expirationdate_meta_box', $t, 'side', 'core');
+		$defaults = get_option('expirationdateDefaults'.ucfirst($t));
+		if (!isset($defaults['activeMetaBox']) || $defaults['activeMetaBox'] == 'active') {
+			add_meta_box('expirationdatediv', __('Post Expirator','post-expirator'), 'expirationdate_meta_box', $t, 'side', 'core');
+		}
 	}
-	add_meta_box('expirationdatediv', __('Post Expirator','post-expirator'), 'expirationdate_meta_box', 'page', 'side', 'core');
 }
 add_action ('add_meta_boxes','expirationdate_meta_custom');
 
@@ -106,7 +123,7 @@ function expirationdate_meta_box($post) {
 				$tz = get_option('timezone_string');
 				if ( $tz ) date_default_timezone_set( $tz );
 				
-				$ts = gmmktime() + (strtotime($custom) - time());
+				$ts = time() + (strtotime($custom) - time());
 				
 				if ( $tz ) date_default_timezone_set('UTC');
 			}
@@ -231,7 +248,8 @@ function expirationdate_meta_box($post) {
 		} elseif (sizeof($taxonomies) > 1 && !isset($defaults['taxonomy'])) {
 			echo '<p>'.__('More than 1 heirachical taxonomy detected.  You must assign a default taxonomy on the settings screen.','post-expirator').'</p>';
 		} else {
-			$taxonomy = isset($defaults['taxonomy']) ? $defaults['taxonomy'] : $taxonomies[0];
+			$keys = array_keys($taxonomies);
+			$taxonomy = isset($defaults['taxonomy']) ? $defaults['taxonomy'] : $keys[0];
 			wp_terms_checklist(0, array( 'taxonomy' => $taxonomy, 'walker' => $walker, 'selected_cats' => $categories, 'checked_ontop' => false ) );
 			echo '<input type="hidden" name="taxonomy-heirarchical" value="'.$taxonomy.'" />';
 		}
@@ -785,6 +803,9 @@ function postExpiratorMenuDefaults() {
 			if (isset($_POST['expirationdate_taxonomy-'.$type])) {
 				$defaults[$type]['taxonomy'] = $_POST['expirationdate_taxonomy-'.$type];
 			}
+			if (isset($_POST['expirationdate_activemeta-'.$type])) {
+				$defaults[$type]['activeMetaBox'] = $_POST['expirationdate_activemeta-'.$type];
+			}
 
 			//Save Settings
 	                update_option('expirationdateDefaults'.ucfirst($type),$defaults[$type]);		
@@ -807,9 +828,26 @@ function postExpiratorMenuDefaults() {
 				$expiredautoenabled = '';
 				$expiredautodisabled = 'checked = "checked"';
 			}
+			if (isset($defaults['activeMetaBox']) && $defaults['activeMetaBox'] == 'inactive') {
+				$expiredactivemetaenabled = '';
+				$expiredactivemetadisabled = 'checked = "checked"';
+#			} else if (!isset($defaults['activeMetaBox']) || (isset($defaults['activeMetaBox']) && $defaults['activeMetaBox'] == 'active')) {
+			} else {
+				$expiredactivemetaenabled = 'checked = "checked"';
+				$expiredactivemetadisabled = '';
+			} 
 			print '<h4>Expiration values for: '.$type.'</h4>';
 			?>
 			<table class="form-table">
+				<tr valign-"top">
+					<th scope="row"><label for="expirationdate_activemeta-<?php echo $type ?>"><?php _e('Active:','post-expirator');?></label></th>
+					<td>
+						<input type="radio" name="expirationdate_activemeta-<?php echo $type ?>" id="expirationdate_activemeta-true-<?php echo $type ?>" value="active" <?php echo $expiredactivemetaenabled ?>/> <label for="expired-active-meta-true"><?php _e('Active','post-expirator');?></label> 
+						<input type="radio" name="expirationdate_activemeta-<?php echo $type ?>" id="expirationdate_activemeta-false-<?php echo $type ?>" value="inactive" <?php echo $expiredactivemetadisabled ?>/> <label for="expired-active-meta-false"><?php _e('Inactive','post-expirator');?></label>
+						<br/>
+						<?php _e('Select whether the post expirator meta box is active for this post type.','post-expirator');?>
+					</td>
+				</tr>
 				<tr valign-"top">
 					<th scope="row"><label for="expirationdate_expiretype-<?php echo $type ?>"><?php _e('How to expire:','post-expirator'); ?></label></th>
 					<td>
@@ -1120,6 +1158,11 @@ function postexpirator_upgrade() {
 		}
 
 		if (version_compare($version,'2.1.0') == -1) {
+			
+			update_option('postexpiratorVersion',POSTEXPIRATOR_VERSION);
+		}
+
+		if (version_compare($version,'2.1.1') == -1) {
 			
 			update_option('postexpiratorVersion',POSTEXPIRATOR_VERSION);
 		}

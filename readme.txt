@@ -47,6 +47,10 @@ This section describes how to install the plugin and get it working.
 
 == Changelog ==
 
+**Version 2.1.1**
+* FIX: Fixed php warning issue cause when post type defaults are not set
+* NEW: Added the option to disable post expirator for certain post types if desired
+
 **Version 2.1.0**
 
 * New: Added support for heirarchical custom taxonomy
