@@ -194,6 +194,9 @@ NOTE: After upgrading, you may need to reset the cron schedules.  Following onsc
 
 == Upgrade Notice ==
 
+= 2.1.2 =
+Important Update - Security Fixes - See Changelog
+
 = 2.0.1 =
 Removes old scheduled hook - this was not done completely in the 2.0.0 upgrade
 
