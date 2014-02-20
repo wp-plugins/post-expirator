@@ -403,7 +403,7 @@ function _scheduleExpiratorEvent($id,$ts,$opts) {
 
 	if (wp_next_scheduled('postExpiratorExpire',array($id)) !== false) {
 		wp_clear_scheduled_hook('postExpiratorExpire',array($id)); //Remove any existing hooks
-		if (POSTEXPIRATOR_DEBUG) $debug->save(array('message' => $id.' -> UNSCHEDULED'));
+		if (POSTEXPIRATOR_DEBUG) $debug->save(array('message' => $id.' -> EXISTING FOUND - UNSCHEDULED'));
 	}
 		
 	wp_schedule_single_event($ts,'postExpiratorExpire',array($id)); 
@@ -604,8 +604,8 @@ function postExpiratorMenuTabs($tab) {
 	if (empty($tab)) $tab = 'general';
         echo '<a href="'.admin_url('options-general.php?page=post-expirator.php&tab=general').'"'.($tab == 'general' ? ' style="font-weight: bold; text-decoration:none;"' : '').'>'.__('General Settings','post-expirator').'</a> | ';
         echo '<a href="'.admin_url('options-general.php?page=post-expirator.php&tab=defaults').'"'.($tab == 'defaults' ? ' style="font-weight: bold; text-decoration:none;"' : '').'>'.__('Defaults','post-expirator').'</a> | ';
-        echo '<a href="'.admin_url('options-general.php?page=post-expirator.php&tab=diagnostics').'"'.($tab == 'diagnostics' ? ' style="font-weight: bold; text-decoration:none;"' : '').'>'.__('Diagnostics','post-expirator').'</a>';
-	echo ' | <a href="'.admin_url('options-general.php?page=post-expirator.php&tab=viewdebug').'"'.($tab == 'viewdebug' ? ' style="font-weight: bold; text-decoration:none;"' : '').'>'.__('View Debug Logs','post-expirator').'</a>';
+        echo '<a href="'.admin_url('options-general.php?page=post-expirator.php&tab=diagnostics').'"'.($tab == 'diagnostics' ? ' style="font-weight: bold; text-decoration:none;"' : '').'>'.__('Diagnostics','post-expirator').'</a> | ';
+	echo '<a href="'.admin_url('options-general.php?page=post-expirator.php&tab=viewdebug').'"'.($tab == 'viewdebug' ? ' style="font-weight: bold; text-decoration:none;"' : '').'>'.__('View Debug Logs','post-expirator').'</a>';
         echo '</p><hr/>';
 }
 
@@ -643,19 +643,23 @@ add_action('admin_menu', 'postExpiratorPluginMenu');
  * Show the Expiration Date options page
  */
 function postExpiratorMenuGeneral() {
-
 	if (isset($_POST['expirationdateSave']) && $_POST['expirationdateSave']) {
-		update_option('expirationdateDefaultDateFormat',$_POST['expired-default-date-format']);
-		update_option('expirationdateDefaultTimeFormat',$_POST['expired-default-time-format']);
-		update_option('expirationdateDisplayFooter',$_POST['expired-display-footer']);
-		update_option('expirationdateFooterContents',$_POST['expired-footer-contents']);
-		update_option('expirationdateFooterStyle',$_POST['expired-footer-style']);
-		if (isset($_POST['expirationdate_category'])) update_option('expirationdateCategoryDefaults',$_POST['expirationdate_category']);
-		update_option('expirationdateDefaultDate',$_POST['expired-default-expiration-date']);
-		if ($_POST['expired-custom-expiration-date']) update_option('expirationdateDefaultDateCustom',$_POST['expired-custom-expiration-date']);
-                echo "<div id='message' class='updated fade'><p>";
-                _e('Saved Options!','post-expirator');
-                echo "</p></div>";
+		if ( !isset($_POST['_postExpiratorMenuGeneral_nonce']) || !wp_verify_nonce($_POST['_postExpiratorMenuGeneral_nonce'],'postExpiratorMenuGeneral') ) {
+			print 'Form Validation Failure: Sorry, your nonce did not verify.';
+			exit;
+		} else {
+			update_option('expirationdateDefaultDateFormat',$_POST['expired-default-date-format']);
+			update_option('expirationdateDefaultTimeFormat',$_POST['expired-default-time-format']);
+			update_option('expirationdateDisplayFooter',$_POST['expired-display-footer']);
+			update_option('expirationdateFooterContents',$_POST['expired-footer-contents']);
+			update_option('expirationdateFooterStyle',$_POST['expired-footer-style']);
+			if (isset($_POST['expirationdate_category'])) update_option('expirationdateCategoryDefaults',$_POST['expirationdate_category']);
+			update_option('expirationdateDefaultDate',$_POST['expired-default-expiration-date']);
+			if ($_POST['expired-custom-expiration-date']) update_option('expirationdateDefaultDateCustom',$_POST['expired-custom-expiration-date']);
+                	echo "<div id='message' class='updated fade'><p>";
+        	        _e('Saved Options!','post-expirator');
+	                echo "</p></div>";
+		}
 	}
 
 	// Get Option
@@ -688,6 +692,7 @@ function postExpiratorMenuGeneral() {
 	</ul>
 	</p>
 	<form method="post" id="expirationdate_save_options">
+		<?php wp_nonce_field('postExpiratorMenuGeneral','_postExpiratorMenuGeneral_nonce'); ?>
 		<h3><?php _e('Defaults','post-expirator'); ?></h3>
 		<table class="form-table">
 			<tr valign-"top">
@@ -792,28 +797,37 @@ function postExpiratorMenuDefaults() {
 	array_unshift($types,'post','page');
 
 	if (isset($_POST['expirationdateSaveDefaults'])) {
-		$defaults = array();
-		foreach ($types as $type) {
-			if (isset($_POST['expirationdate_expiretype-'.$type])) {
-				$defaults[$type]['expireType'] = $_POST['expirationdate_expiretype-'.$type];
-			}
-			if (isset($_POST['expirationdate_autoenable-'.$type])) {
-				$defaults[$type]['autoEnable'] = intval($_POST['expirationdate_autoenable-'.$type]);
-			}
-			if (isset($_POST['expirationdate_taxonomy-'.$type])) {
-				$defaults[$type]['taxonomy'] = $_POST['expirationdate_taxonomy-'.$type];
-			}
-			if (isset($_POST['expirationdate_activemeta-'.$type])) {
-				$defaults[$type]['activeMetaBox'] = $_POST['expirationdate_activemeta-'.$type];
-			}
+		if ( !isset($_POST['_postExpiratorMenuDefaults_nonce']) || !wp_verify_nonce($_POST['_postExpiratorMenuDefaults_nonce'],'postExpiratorMenuDefaults') ) {
+			print 'Form Validation Failure: Sorry, your nonce did not verify.';
+			exit;
+		} else {
+			$defaults = array();
+			foreach ($types as $type) {
+				if (isset($_POST['expirationdate_expiretype-'.$type])) {
+					$defaults[$type]['expireType'] = $_POST['expirationdate_expiretype-'.$type];
+				}
+				if (isset($_POST['expirationdate_autoenable-'.$type])) {
+					$defaults[$type]['autoEnable'] = intval($_POST['expirationdate_autoenable-'.$type]);
+				}
+				if (isset($_POST['expirationdate_taxonomy-'.$type])) {
+					$defaults[$type]['taxonomy'] = $_POST['expirationdate_taxonomy-'.$type];
+				}
+				if (isset($_POST['expirationdate_activemeta-'.$type])) {
+					$defaults[$type]['activeMetaBox'] = $_POST['expirationdate_activemeta-'.$type];
+				}
 
-			//Save Settings
-	                update_option('expirationdateDefaults'.ucfirst($type),$defaults[$type]);		
+				//Save Settings
+		                update_option('expirationdateDefaults'.ucfirst($type),$defaults[$type]);		
+			}
+                	echo "<div id='message' class='updated fade'><p>";
+       		        _e('Saved Options!','post-expirator');
+        	        echo "</p></div>";
 		}
 	}
 
 	?>
         <form method="post">
+                <?php wp_nonce_field('postExpiratorMenuDefaults','_postExpiratorMenuDefaults_nonce'); ?>
                 <h3><?php _e('Default Expiration Values','post-expirator');?></h3>
 		<p>
 		<?php _e('Use the values below to set the default actions/values to be used for each for the corresponding post types.  These values can all be overwritten when creating/editing the post/page.','post-expirator'); ?>
@@ -886,22 +900,29 @@ function postExpiratorMenuDefaults() {
 }
 
 function postExpiratorMenuDiagnostics() {
-	if (isset($_POST['debugging-disable'])) {
-		update_option('expirationdateDebug',0);
-                echo "<div id='message' class='updated fade'><p>"; _e('Debugging Disabled','post-expirator'); echo "</p></div>";
-	} elseif (isset($_POST['debugging-enable'])) {
-		update_option('expirationdateDebug',1);
-                echo "<div id='message' class='updated fade'><p>"; _e('Debugging Enabled','post-expirator'); echo "</p></div>";
-	} elseif (isset($_POST['purge-debug'])) {
-		require_once(plugin_dir_path(__FILE__).'post-expirator-debug.php');
-		$debug = new postExpiratorDebug();
-		$debug->purge();
-                echo "<div id='message' class='updated fade'><p>"; _e('Debugging Table Emptied','post-expirator'); echo "</p></div>";
+	if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+		if ( !isset($_POST['_postExpiratorMenuDiagnostics_nonce']) || !wp_verify_nonce($_POST['_postExpiratorMenuDiagnostics_nonce'],'postExpiratorMenuDiagnostics') ) {
+			print 'Form Validation Failure: Sorry, your nonce did not verify.';
+			exit;
+		}
+		if (isset($_POST['debugging-disable'])) {
+			update_option('expirationdateDebug',0);
+        	        echo "<div id='message' class='updated fade'><p>"; _e('Debugging Disabled','post-expirator'); echo "</p></div>";
+		} elseif (isset($_POST['debugging-enable'])) {
+			update_option('expirationdateDebug',1);
+                	echo "<div id='message' class='updated fade'><p>"; _e('Debugging Enabled','post-expirator'); echo "</p></div>";
+		} elseif (isset($_POST['purge-debug'])) {
+			require_once(plugin_dir_path(__FILE__).'post-expirator-debug.php');
+			$debug = new postExpiratorDebug();
+			$debug->purge();
+        	        echo "<div id='message' class='updated fade'><p>"; _e('Debugging Table Emptied','post-expirator'); echo "</p></div>";
+		}
 	}
 
 	$debug = postExpiratorDebug();
 	?>
         <form method="post" id="postExpiratorMenuUpgrade">
+                <?php wp_nonce_field('postExpiratorMenuDiagnostics','_postExpiratorMenuDiagnostics_nonce'); ?>
                 <h3><?php _e('Advanced Diagnostics','post-expirator');?></h3>
                 <table class="form-table">		
                         <tr valign-"top">
@@ -924,6 +945,18 @@ function postExpiratorMenuDiagnostics() {
                                 <th scope="row"><?php _e('Purge Debug Log:','post-expirator');?></th>
                                 <td>
 					<input type="submit" class="button" name="purge-debug" id="purge-debug" value="<?php _e('Purge Debug Log','post-expirator');?>" />
+				</td>
+			</tr/>
+                        <tr valign-"top">
+                                <th scope="row"><?php _e('WP-Cron Status:','post-expirator');?></th>
+                                <td>
+					<?php 
+					if (defined('DISABLE_WP_CRON') && DISABLE_WP_CRON === true) {
+						_e('DISABLED','post-expirator');
+					} else {
+						_e('ENABLED - OK','post-expirator');
+					}
+					?>
 				</td>
 			</tr/>
                         <tr valign-"top">
