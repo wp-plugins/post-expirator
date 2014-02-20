@@ -48,6 +48,7 @@ This section describes how to install the plugin and get it working.
 == Changelog ==
 
 **Version 2.1.2**
+
 * Security: Added form nonce for protect agaisnt possible CSRF
 * Security: Fixed XSS issue on settings pages
 * New: Added check to show if WP_CRON is enabled on diagnostics page
