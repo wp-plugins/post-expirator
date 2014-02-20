@@ -1,9 +1,9 @@
 === Post Expirator ===
 Contributors: axelseaa
 Tags: expire, posts, pages, schedule
-Requires at least: 3.2
-Tested up to: 3.5.1
-Stable tag: 2.1.1
+Requires at least: 3.7
+Tested up to: 3.8.1
+Stable tag: 2.1.2
 
 Allows you to add an expiration date to posts which you can configure to either delete the post, change it to a draft, or update the 
 post categories.
@@ -46,6 +46,12 @@ This section describes how to install the plugin and get it working.
 3. Settings screen
 
 == Changelog ==
+
+**Version 2.1.2**
+* Security: Added form nonce for protect agaisnt possible CSRF
+* Security: Fixed XSS issue on settings pages
+* New: Added check to show if WP_CRON is enabled on diagnostics page
+* Fix: Minor Code Cleanup
 
 **Version 2.1.1**
 
