@@ -729,7 +729,7 @@ function postExpiratorMenuGeneral() {
 					<div id="expired-custom-container" style="display: <?php echo $show; ?>;">
 					<br/><label for="expired-custom-expiration-date">Custom:</label> <input type="text" value="<?php echo $expirationdateDefaultDateCustom; ?>" name="expired-custom-expiration-date" id="expired-custom-expiration-date" />
 					<br/>
-					<?php _e('Set the custom value to use for the default expiration date.  For information on formatting, see <a href="http://php.net/manual/en/function.strtotime.php">PHP strtotime function</a>.','post-expirator'); ?>
+					<?php _e('Set the custom value to use for the default expiration date.  For information on formatting, see <a href="http://php.net/manual/en/function.strtotime.php">PHP strtotime function</a>. For example, you could enter "+1 month" or "+1 week 2 days 4 hours 2 seconds" or "next Thursday."','post-expirator'); ?>
 					</div>
 				</td>
 			</tr>
