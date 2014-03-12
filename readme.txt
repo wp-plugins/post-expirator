@@ -3,7 +3,7 @@ Contributors: axelseaa
 Tags: expire, posts, pages, schedule
 Requires at least: 3.7
 Tested up to: 3.8.1
-Stable tag: 2.1.2
+Stable tag: 2.1.3
 
 Allows you to add an expiration date to posts which you can configure to either delete the post, change it to a draft, or update the 
 post categories.
@@ -46,6 +46,10 @@ This section describes how to install the plugin and get it working.
 3. Settings screen
 
 == Changelog ==
+
+**Version 2.1.3**
+
+* Fix: Default category selection now saves correctly on default settings screen
 
 **Version 2.1.2**
 
@@ -194,6 +198,9 @@ NOTE: After upgrading, you may need to reset the cron schedules.  Following onsc
 * Initial Release
 
 == Upgrade Notice ==
+
+= 2.1.3 =
+Default category selection now saves correctly on default settings screen
 
 = 2.1.2 =
 Important Update - Security Fixes - See Changelog
