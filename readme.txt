@@ -1,5 +1,6 @@
 === Post Expirator ===
 Contributors: axelseaa
+Donate link: http://aaron.axelsen.us/donate
 Tags: expire, posts, pages, schedule
 Requires at least: 3.7
 Tested up to: 3.8.1
