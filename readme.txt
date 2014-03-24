@@ -48,6 +48,10 @@ This section describes how to install the plugin and get it working.
 
 == Changelog ==
 
+**DEV**
+
+* Fix: PHP Strict errors with 5.4
+
 **Version 2.1.3**
 
 * Fix: Default category selection now saves correctly on default settings screen
