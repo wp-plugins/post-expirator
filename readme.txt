@@ -4,7 +4,7 @@ Donate link: http://aaron.axelsen.us/donate
 Tags: expire, posts, pages, schedule
 Requires at least: 4.0
 Tested up to: 4.2
-Stable tag: 2.1.3
+Stable tag: 2.1.4
 
 Allows you to add an expiration date to posts which you can configure to either delete the post, change it to a draft, or update the 
 post categories.
@@ -51,7 +51,7 @@ This section describes how to install the plugin and get it working.
 **Version 2.1.4**
 
 * Fix: PHP Strict errors with 5.4+
-* Fix: Removed temporary timezone conversion to use core functions
+* Fix: Removed temporary timezone conversion - now using core functions again
 
 **Version 2.1.3**
 
@@ -204,6 +204,11 @@ NOTE: After upgrading, you may need to reset the cron schedules.  Following onsc
 * Initial Release
 
 == Upgrade Notice ==
+
+= 2.1.4 =
+Fixed PHP Strict errors with 5.4+
+Removed temporary timezone conversion functions
+
 
 = 2.1.3 =
 Default category selection now saves correctly on default settings screen
